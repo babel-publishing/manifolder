@@ -24,12 +24,13 @@ import time
 import numpy as np
 import os
 
-#print(os.getcwd())
+# print(os.getcwd())
 
 start_time = time.time()
 
 # always flush print outputs
 import functools
+
 print = functools.partial(print, flush=True)
 
 ###
@@ -60,7 +61,7 @@ print('\n*** executing embedding.py')
 exec(open('manifolder_pkg/embedding.py').read())
 
 ###
-### clutering
+### clustering
 ###
 print('*** executing clustering.py')
 exec(open('manifolder_pkg/clustering.py').read())
@@ -70,3 +71,5 @@ exec(open('manifolder_pkg/clustering.py').read())
 ###
 elapsed_time = time.time() - start_time
 print('\n\t Program Executed in', str(np.round(elapsed_time, 2)), 'seconds')   # about 215 seconds (four minutes)
+
+# --------

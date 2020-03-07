@@ -13,20 +13,20 @@
 # note, not using x_interp in this code
 
 # the simplified data
-data_location = 'manifolder_pkg/data/simple_data.csv'
-
-# solar wind data
-#data_location = 'manifolder_pkg/data/solar_wind_data.csv'
+if 'data_location_override' in locals():
+    # use the new data location instead, if it was passed in
+    data_location = data_location_override
+else:
+    # simple test data
+    data_location = 'manifolder_pkg/data/simple_data.csv'
+    # solar wind data
+    #data_location = 'manifolder_pkg/data/solar_wind_data.csv'
 
 import numpy as np
-
 np.set_printoptions(suppress=True, precision=4)
-
 import pandas as pd
 
-import manifolder_helper as mh
-
-print('loading data ... ', end='')
+print('loading data from' + data_location + '... ', end='')
 
 # data was created from MATLAB with:
 #   >>> load homa_data.mat

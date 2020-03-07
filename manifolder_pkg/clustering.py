@@ -66,7 +66,7 @@ zs /= np.max(np.abs(zs))
 
 print(xs.shape)
 
-lim = 4000
+lim = 2000
 
 plt.figure(figsize=[15, 3])
 
@@ -84,14 +84,52 @@ plt.ylabel('Value')
 
 #plt.gca().autoscale(enable=True, axis='both', tight=None )
 
-plt.gca().xaxis.set_ticklabels([])
-plt.gca().yaxis.set_ticklabels([])
+# plt.gca().xaxis.set_ticklabels([])
+# plt.gca().yaxis.set_ticklabels([])
 
 plt.title('Example Timeseries and Manifold Projection')
 # plt.plot(IDX[:lim])
 # plt.plot(xs)
 
 print('done')
+
+###
+### additional parsing, for color graphs
+###
+import matplotlib
+
+cmap = matplotlib.cm.get_cmap('Spectral')
+
+val = xref1[:lim]
+idx = IDX[:lim]
+
+r = xs[:lim]
+g = ys[:lim]
+b = zs[:lim]
+
+# prevent the jump in data value
+r[:H] = r[H]
+g[:H] = g[H]
+b[:H] = b[H]
+
+r -= np.min(r)
+r /= np.max(r)
+
+g -= np.min(g)
+g /= np.max(g)
+
+b -= np.min(b)
+b /= np.max(b)
+
+plt.figure(figsize=[15, 3])
+
+for i in range(lim - 1):
+    col = [r[i], g[i], b[i]]
+    plt.plot([i, i + 1], [val[i], val[i + 1]], color=col)
+
+plt.title('data, colored according to Psi (color three-vector)')
+
+plt.show()
 
          # Figures
 

@@ -6,6 +6,8 @@ np.set_printoptions(suppress=True, precision=4)
 
 import matplotlib.pyplot as plt
 
+from collections import OrderedDict
+
 
 # used by histograms_overlap
 def histogram_bins_centered(data, nbins):
@@ -364,27 +366,28 @@ def show_cluster_lens(cluster_lens):
     keys = list(cluster_lens.keys())
     nkeys = len(keys)
 
-    plt.figure(figsize=[nkeys * 2, 7])
+    plt.figure()
 
+    fig, axes = plt.subplots(nkeys, 1, sharex=True, sharey=True, figsize=[7, nkeys*1 + 1])
+
+    # loop through, and make all the histograms, as subplots
     for k in range(nkeys):
         key = keys[k]
 
-        plt.subplot(nkeys, 1, k + 1)
-
         different_lengths_this_cluster = np.unique(cluster_lens[key])
-        #print(different_lengths_this_cluster)
 
         for l in different_lengths_this_cluster:
             number_of_occurrences = np.sum(np.where(cluster_lens[key] == l)[0])
-            #print('length', l, 'number_of_occurrences', number_of_occurrences)
+            # print('length', l, 'number_of_occurrences', number_of_occurrences)
 
             # plot as a vertical bar
-            plt.plot([l, l], [0, number_of_occurrences])
+            axes[k].plot([l, l], [0, number_of_occurrences])
 
-        plt.title('cluster lengths for cluster ' + str(key))
+        axes[k].set_ylabel('cl ' + str(k))
 
-        # find the limits of this plot, use to unify the axis (all graphs on same axis)
-
+    plt.tight_layout()
+    plt.suptitle('cluster length histograms')
+    plt.xlabel('cluster lengths')
     plt.show()
 
 
@@ -395,3 +398,105 @@ def test_count_cluster_lengths():
     cluster_lens = count_cluster_lengths(a)
 
     print_cluster_lens(cluster_lens)
+
+
+###
+### transition matrix
+###
+def make_transition_matrix(states):
+    """ transition matrix of a bunch of states (like IDX)"""
+    states_max = np.max(states)
+
+    tmat = np.zeros((states_max + 1, states_max + 1))
+
+    # note, transition matrix is written with the
+    #   STATES AS COLUMNS, as in quantum mechanics / physics
+    #
+    # evolution is then:
+    #   |state+1> = tmat @ |state>
+    #
+    # (but need to normalize tmat)
+    #
+
+    for i in range(states.size - 1):
+        # states[i+1] is valid
+        state_from = states[i]
+        state_to = states[i + 1]
+        tmat[state_to, state_from] += 1
+
+    return tmat
+
+
+def make_matrix_markov(A):
+    """ takes a matrix, and normalizes so that each column sums to one
+        (assumes matrix values are already positive!)"""
+    # makes more sense to normalize so that the columns sum to one
+    col_sum = np.sum(A, axis=0).reshape(1, -1)
+
+    # print(col_sum)
+
+    A_markov = A / col_sum   # col_sum will broadcast
+
+    return A_markov
+
+
+# A = np.random.randn(3,3)
+# print(A)
+# print(make_matrix_markov(A))
+
+
+def image_M(data, vmax=None):
+    """ t for transition matrix"""
+    plt.figure(figsize=(7, 7))
+
+    # create scaled data
+    if vmax is None:
+        vmax = np.max(np.abs(data))
+
+    # cmap = 'gist_heat'
+    # cmap = 'bone'
+    cmap = 'hot'
+    # cmap = 'binary'
+    plt.imshow(data, vmin=0, vmax=vmax, cmap=cmap)
+
+    plt.grid(b=None)
+
+    plt.xlabel('from')
+    plt.ylabel('to')
+
+    plt.colorbar()
+
+    plt.title('transition matrix')
+
+    plt.show()
+
+
+def reorder_cluster(IDX, M):
+    """ renames the clusters, so the diagonal elements of M will be in decreasing order
+        note, M must be regenerated from the new_IDX that is returned"""
+    print('NOTE, need to fix bug, sometimes orders backwards')
+
+    idx_freq = M.diagonal()
+
+    new_idx = np.zeros_like(IDX)
+
+    # sort the values of the index, from largest to smallest
+    new_order = np.argsort(idx_freq)
+
+    # so weird ... new_order is alternately lowest-to-highest, and highest-to-lowest
+    # just reorder, if needed
+    # if idx_freq[new_order[-1]] > idx_freq[new_order[-1]]:
+    #     # frequency INCREASES at the end ... reorder!
+    #     print('yup!')
+    #     new_order = new_order[::-1]
+    # else:
+    #     print('nerp!!')
+
+    new_order = new_order[::-1]
+
+    for i in range(len(new_order)):
+        # find all the locations matching next index needed
+        loc = np.where(IDX == new_order[i])
+        new_idx[loc] = i     # reorder, starting with i
+
+    return new_idx
