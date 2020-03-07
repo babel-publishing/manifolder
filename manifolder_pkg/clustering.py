@@ -79,7 +79,9 @@ plt.plot(IDX[:lim] / np.max(IDX) + 1, linewidth=.8, label='IDX')
 
 plt.legend()
 
-plt.xlabel('Time $ \\rightarrow $')
+# rightarrow causes an image error, when displayed in github!
+#plt.xlabel('Time $ \\rightarrow $')
+plt.xlabel('Time')
 plt.ylabel('Value')
 
 #plt.gca().autoscale(enable=True, axis='both', tight=None )
@@ -128,6 +130,8 @@ for i in range(lim - 1):
     plt.plot([i, i + 1], [val[i], val[i + 1]], color=col)
 
 plt.title('data, colored according to Psi (color three-vector)')
+plt.xlabel('Time')
+plt.ylabel('Value')
 
 plt.show()
 
