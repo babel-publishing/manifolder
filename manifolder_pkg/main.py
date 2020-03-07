@@ -22,6 +22,9 @@
 
 import time
 import numpy as np
+import os
+
+#print(os.getcwd())
 
 start_time = time.time()
 
@@ -33,7 +36,8 @@ print = functools.partial(print, flush=True)
 ### load data (python)
 ####
 print('\n*** executing load_data.py')
-exec(open('load_data.py').read())
+print()
+exec(open('manifolder_pkg/load_data.py').read())
 
 ### Modeling
 
@@ -41,25 +45,25 @@ exec(open('load_data.py').read())
 ### compute_histograms (python)
 ###
 print('\n*** executing histograms_overlap.py')
-exec(open('histograms_overlap.py').read())
+exec(open('manifolder_pkg/histograms_overlap.py').read())
 
 ###
 ### covariances
 ###
 print('\n*** executing covariances.py')
-exec(open('covariances.py').read())
+exec(open('manifolder_pkg/covariances.py').read())
 
 ###
 ### embedding
 ###
 print('\n*** executing embedding.py')
-exec(open('embedding.py').read())
+exec(open('manifolder_pkg/embedding.py').read())
 
 ###
 ### clutering
 ###
 print('*** executing clustering.py')
-exec(open('clustering.py').read())
+exec(open('manifolder_pkg/clustering.py').read())
 
 ###
 ### end

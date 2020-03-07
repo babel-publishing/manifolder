@@ -364,19 +364,19 @@ def show_cluster_lens(cluster_lens):
     keys = list(cluster_lens.keys())
     nkeys = len(keys)
 
-    plt.figure(figsize=[nkeys*2,7])
+    plt.figure(figsize=[nkeys * 2, 7])
 
     for k in range(nkeys):
         key = keys[k]
 
-        plt.subplot(nkeys, 1, k+1)
+        plt.subplot(nkeys, 1, k + 1)
 
         different_lengths_this_cluster = np.unique(cluster_lens[key])
         #print(different_lengths_this_cluster)
 
         for l in different_lengths_this_cluster:
             number_of_occurrences = np.sum(np.where(cluster_lens[key] == l)[0])
-            print('length', l, 'number_of_occurrences', number_of_occurrences)
+            #print('length', l, 'number_of_occurrences', number_of_occurrences)
 
             # plot as a vertical bar
             plt.plot([l, l], [0, number_of_occurrences])

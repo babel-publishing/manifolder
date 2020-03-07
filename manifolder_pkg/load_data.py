@@ -12,6 +12,12 @@
 
 # note, not using x_interp in this code
 
+# the simplified data
+data_location = 'manifolder_pkg/data/simple_data.csv'
+
+# solar wind data
+#data_location = 'manifolder_pkg/data/solar_wind_data.csv'
+
 import numpy as np
 
 np.set_printoptions(suppress=True, precision=4)
@@ -31,14 +37,7 @@ print('loading data ... ', end='')
 Dim = 3
 
 # the easiest way to load data from csv is to use pandas, which brings in a dataframe
-
-# LOAD ORIGINAL DATA
-# print('loading original solar_wind_data')
-# df = pd.read_csv('data/solar_wind_data.csv', header=None)
-
-# LOAD_SIMPLIFIED_DATA
-print('loading simplified_data')
-df = pd.read_csv('data/simple_data.csv', header=None)
+df = pd.read_csv(data_location, header=None)
 
 # rather than use a dataframe, work on the data directly, as a numpy array
 # keep the 'observations as columns' orientation of the original MATLAB code
