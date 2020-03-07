@@ -71,9 +71,14 @@ lim = 2000
 plt.figure(figsize=[15, 3])
 
 plt.plot(xref1[:lim], color='black', label='Timeseries')
-plt.plot(xs[:lim], linewidth=.5, label='$\psi_0$')
-plt.plot(ys[:lim], linewidth=.5, label='$\psi_1$')
-plt.plot(zs[:lim], linewidth=.5, label='$\psi_2$')
+# plt.plot(xs[:lim], linewidth=.5, label='$\psi_0$')
+# plt.plot(ys[:lim], linewidth=.5, label='$\psi_1$')
+# plt.plot(zs[:lim], linewidth=.5, label='$\psi_2$')
+
+plt.plot(xs[:lim], linewidth=.5, label='psi_0')
+plt.plot(ys[:lim], linewidth=.5, label='psi_1')
+plt.plot(zs[:lim], linewidth=.5, label='psi_2')
+
 
 plt.plot(IDX[:lim] / np.max(IDX) + 1, linewidth=.8, label='IDX')
 
