@@ -1,7 +1,7 @@
 % Cluster embedding and generate figures and output files
 % ***************************************************************@
 %% Configuration
-numClusters = 14;
+numClusters = 7;
 intrinsicDim = Dim;  % can be varied slightly but shouldn't be much larger than Dim
 
 %% Clusters

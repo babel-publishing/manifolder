@@ -46,13 +46,13 @@ class Manifolder():
     >>> manifolder = Manifolder().fit(data)
     >>> clusters() = manifolder.clusters()
     """
-    def __init__(self, dim=3, H=40, step_size=5, nbins=5, n_jobs=None):
+    def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, n_jobs=None):
         self.Dim = dim
         self.H = H
         self.stepSize = step_size
         self.nbins = nbins
 
-    def fit(self, X):
+    def fit_transform(self, X):
         """
         Fit (find the underlying manifold).
 
@@ -75,10 +75,18 @@ class Manifolder():
         ###
         #print('fit was called, not yet implemented')
         self._load_data(X)
-        self._histograms_overlap()
-        self._covariances()
-        self._embedding()
-        self._clustering()
+
+        if distance_measurement is None:
+            self._histograms_overlap()
+            self._covariances()
+            self._embedding()
+        elif distance_measurement == 'euclidian':
+            # self._euclidian
+            print('not yet implemented')
+        elif distance_measurement == 'euclidian':
+            print('not yet implemented')
+        return self.Psi  # the final clustering is in Psi
+        # self._clustering()
 
         # sklearn fit() tends to return self
         return self
@@ -228,7 +236,16 @@ class Manifolder():
         ###
 
         ## Configuration
-        m = 4000                  # starting point for sequantial processing/extension
+
+        # the variable m defines some subset of the data, to make computation faster;
+        # this could be various values (10% of the data, all the data, etc.), as long
+        # as it is not GREATER than the length of data.
+        #   For the smallest change, setting to min 4000 or the data size
+
+        #m = 4000                  # starting point for sequential processing/extension
+        m = np.min((4000,self.z_mean.shape[1]))
+        print('using',m,'for variable m')
+
         data = self.z_mean.T      # set the means as the input set
         M = data.shape[0]
 

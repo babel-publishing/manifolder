@@ -354,21 +354,24 @@ def count_cluster_lengths(x):
 
 
 def print_cluster_lens(cluster_lens):
-    """ prints out the dictionary object created, that stores cluster lengths """
+    """ prints out the dictionary object created, that stores cluster lengths
+    """
     for key in cluster_lens.keys():
         # also, sort the lists here
         cluster_lens[key].sort()  # on the list, happens in place
         print('key', key, 'value', cluster_lens[key], '\n')
 
 
-def show_cluster_lens(cluster_lens):
-    """ plots the lengths of the clusters, as determined above """
+def show_cluster_lens(cluster_lens,sharey=True):
+    """ plots the lengths of the clusters, as determined above
+        sharey=False allows each subplot to have different y-axis limits
+    """
     keys = list(cluster_lens.keys())
     nkeys = len(keys)
 
     plt.figure()
 
-    fig, axes = plt.subplots(nkeys, 1, sharex=True, sharey=True, figsize=[7, nkeys*1 + 1])
+    fig, axes = plt.subplots(nkeys, 1, sharex=True, sharey=sharey, figsize=[7, nkeys*1 + 1])
 
     # loop through, and make all the histograms, as subplots
     for k in range(nkeys):
