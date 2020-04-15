@@ -52,6 +52,8 @@ class Manifolder():
         self.stepSize = step_size
         self.nbins = nbins
 
+        self.distance_measure = distance_measure
+
     def fit_transform(self, X):
         """
         Fit (find the underlying manifold).
@@ -76,14 +78,14 @@ class Manifolder():
         #print('fit was called, not yet implemented')
         self._load_data(X)
 
-        if distance_measurement is None:
+        if self.distance_measure is None:
             self._histograms_overlap()
             self._covariances()
             self._embedding()
-        elif distance_measurement == 'euclidian':
+        elif self.distance_measure == 'euclidian':
             # self._euclidian
             print('not yet implemented')
-        elif distance_measurement == 'euclidian':
+        elif self.distance_measure == 'euclidian':
             print('not yet implemented')
         return self.Psi  # the final clustering is in Psi
         # self._clustering()
