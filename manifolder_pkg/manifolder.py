@@ -173,6 +173,9 @@ class Manifolder():
         print(' done')
     
     def _covariances(self):
+        #
+        #
+
         print('computing local covariances ', end='')
 
         ## Configuration
@@ -279,6 +282,11 @@ class Manifolder():
         #   For the smallest change, setting to min 4000 or the data size
 
         #m = 4000                  # starting point for sequential processing/extension
+        #
+        #TODO - m allows you to sample various sections of the manifold, ratheer than looking at
+        # all points to all points
+        # the random points can come from the different chunks as well?
+        #   ... for ease of coding, the datastructure could be back to 2D data
         m = np.min((4000,self.z_mean.shape[1]))
         print('using',m,'for variable m')
 
