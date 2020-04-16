@@ -97,7 +97,22 @@ class Manifolder():
         """ loads the data, in [samples, nfeatures]
             NOTE - internally, data is stored in the
             format used in the original code """
+        #TODO
+        #
+        # here the data comes in as one timeseries
+        # see https://tslearn.readthedocs.io/en/latest/
+        #
+        #
+        # the list of matrices must have the same number of features, but variable time length
+        #
+        #  if isinstance(self.Z,list):
+        #
         self.z = data.T      # time is a function of columns, internally
+
+        #TODO - this should work for making sure the data is always a list
+        # ... but lots of changes will follow!
+        #if not isinstance(self.Z, list):
+        #    self.Z = [self.Z] # make a list of length 1
 
         self.N = self.z.shape[0]  # will be 8, the number of features
 
@@ -105,6 +120,12 @@ class Manifolder():
 
         ## Concatenate 1D histograms (marginals) of each sensor in short windows
         z_hist_list = []     # in Python, lists are sometimes easier than concatinate
+
+        #TODO
+        #
+        # for chunks of data, z_hist will also need to be a similar (3D format)
+        #
+        #
 
         print('calculating histograms for', self.N, 'dimensions (univariate timeseries) ', end='')
 
@@ -152,6 +173,9 @@ class Manifolder():
         print(' done')
 
     def _covariances(self):
+        #
+        #
+
         print('computing local covariances ', end='')
 
         ## Configuration
@@ -245,6 +269,11 @@ class Manifolder():
         #   For the smallest change, setting to min 4000 or the data size
 
         #m = 4000                  # starting point for sequential processing/extension
+        #
+        #TODO - m allows you to sample various sections of the manifold, ratheer than looking at
+        # all points to all points
+        # the random points can come from the different chunks as well?
+        #   ... for ease of coding, the datastructure could be back to 2D data
         m = np.min((4000,self.z_mean.shape[1]))
         print('using',m,'for variable m')
 
