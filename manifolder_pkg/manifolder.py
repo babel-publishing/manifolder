@@ -3,6 +3,7 @@ from numpy.linalg import inv
 
 from sklearn.cluster import KMeans
 
+# from manifolder_pkg import manifolder_helper as mh
 import manifolder_helper as mh
 
 import functools
@@ -97,60 +98,80 @@ class Manifolder():
         """ loads the data, in [samples, nfeatures]
             NOTE - internally, data is stored in the
             format used in the original code """
-        self.z = data.T      # time is a function of columns, internally
+        if not isinstance(data,list):
+            self.z = [data.T] # creates a list of length 1
+        else:
+            n = len(data)
+            for snip in range(n):
+                if snip==0:
+                    self.z = [data[snip].T]
+                else:
+                    self.z.append(data[snip].T)   # time is a function of the columns, internally
 
-        self.N = self.z.shape[0]  # will be 8, the number of features
+        self.N = self.z[0].shape[0]  # will be 8, the number of features
 
     def _histograms_overlap(self):
 
-        ## Concatenate 1D histograms (marginals) of each sensor in short windows
-        z_hist_list = []     # in Python, lists are sometimes easier than concatinate
+        n = len(self.z)
 
-        print('calculating histograms for', self.N, 'dimensions (univariate timeseries) ', end='')
+        hist_bins = mh.histogram_bins_all_snips(self.z, self.nbins)
 
-        # for dim=1:N
-        for dim in range(self.N):      # loop run standard Python indexing, starting at dim = 0
-            print('.', end='')
-            series = self.z[dim, :]    # grab a row of data
 
-            # NOTE, MATLAB and python calculate histograms differently
-            # MATLAB uses nbins values, as bins centerpoints, and
-            # Python uses nbins+1 values, to specify the bin endpoints
+        for snip in range(n):
+            ## Concatenate 1D histograms (marginals) of each sensor in short windows
+            z_hist_list = []     # in Python, lists are sometimes easier than concatinate
+    
+            z = self.z[snip]
 
-            # note, hist_bins will always be [0 .25 .5 .75 1], in MATLAB
-            # equivalent for python hist is
-            #   [-0.12   0.128  0.376  0.624  0.872  1.12 ]
-            hist_bins = mh.histogram_bins_centered(series, self.nbins)
-
-            z_hist_dim_list = []
-
-            # for i=1:floor((size(z,2)-H)/stepSize)
-            i_range = int(np.floor(self.z.shape[1] - self.H) / self.stepSize)
-            for i in range(i_range):
-                # interval = z(dim, 1 + (i - 1) * stepSize: (i - 1) * stepSize + H);
-                interval = series[i * self.stepSize:i * self.stepSize + self.H]
-
-                # take the histogram here, and append it ... should be nbins values
-                # first value returned by np.histogram the actual histogram
-                #
-                #  NOTE!!! these bins to not overlap completely with the MATLAB version,
-                #   but are roughly correct ... probably exact boundaries are not the same,
-                #   would need to look into this ...
-                #
-                hist = np.histogram(interval, hist_bins)[0]
-                z_hist_dim_list.append(hist)
-
-            # convert from a list, to array [nbins x (series.size/stepSize?)]
-            z_hist_dim = np.array(z_hist_dim_list).T
-
-            # z_hist = [z_hist; z_hist_dim];
-            z_hist_list.append(z_hist_dim)
-
-        # convert from list back to numpy array
-        self.z_hist = np.concatenate(z_hist_list)
-
+            print('calculating histograms for', self.N, 'dimensions (univariate timeseries) ', end='')
+    
+            # for dim=1:N
+            for dim in range(self.N):      # loop run standard Python indexing, starting at dim = 0
+                print('.', end='')
+                series = z[dim, :]    # grab a row of data
+    
+                # NOTE, MATLAB and python calculate histograms differently
+                # MATLAB uses nbins values, as bins centerpoints, and
+                # Python uses nbins+1 values, to specify the bin endpoints
+    
+                # note, hist_bins will always be [0 .25 .5 .75 1], in MATLAB
+                # equivalent for python hist is
+                #   [-0.12   0.128  0.376  0.624  0.872  1.12 ]
+                # hist_bins = mh.histogram_bins_centered(series, self.nbins)
+    
+                z_hist_dim_list = []
+    
+                # for i=1:floor((size(z,2)-H)/stepSize)
+                i_range = int(np.floor(z.shape[1] - self.H) / self.stepSize)
+                for i in range(i_range):
+                    # interval = z(dim, 1 + (i - 1) * stepSize: (i - 1) * stepSize + H);
+                    interval = series[i * self.stepSize:i * self.stepSize + self.H]
+    
+                    # take the histogram here, and append it ... should be nbins values
+                    # first value returned by np.histogram the actual histogram
+                    #
+                    #  NOTE!!! these bins to not overlap completely with the MATLAB version,
+                    #   but are roughly correct ... probably exact boundaries are not the same,
+                    #   would need to look into this ...
+                    #
+                    hist = np.histogram(interval, hist_bins[dim])[0]
+                    z_hist_dim_list.append(hist)
+    
+                # convert from a list, to array [nbins x (series.size/stepSize?)]
+                z_hist_dim = np.array(z_hist_dim_list).T
+    
+                # z_hist = [z_hist; z_hist_dim];
+                z_hist_list.append(z_hist_dim)
+                
+            # convert from list back to numpy array
+            if snip == 0:
+                self.z_hist = [np.concatenate(z_hist_list)]
+            else:
+                self.z_hist.append(np.concatenate(z_hist_list))
+    
+    
         print(' done')
-
+    
     def _covariances(self):
         print('computing local covariances ', end='')
 
@@ -158,77 +179,90 @@ class Manifolder():
         # ncov = 10    # (previous value) size of neighborhood for covariance
         ncov = 40  # size of neighborhood for covariance
 
-        self.z_mean = np.zeros_like(self.z_hist)      # Store the mean histogram in each local neighborhood
+        n = len(self.z_hist)
 
-        # NOTE, original matlab call should have used N * nbins ... length(hist_bins) works fine in MATLAB,
-        # but in python hist_bins has one more element than nbins, since it defines the boundaries ...
+        for snip in range(n):
+            z_hist = self.z_hist[snip]
 
-        # inv_c = zeros(N*length(hist_bins), N*length(hist_bins), length(z_hist))
-        # Store the inverse covariance matrix of histograms in each local neighborhood
-        self.inv_c = np.zeros((self.N * self.nbins, self.N * self.nbins, self.z_hist.shape[1]))
-
-        # precalculate the values over which i will range ...
-        # this is like 40 to 17485 (inclusive) in python
-        # 41 to 17488 in MATLAB ... (check?)
-        irange = range(ncov, self.z_hist.shape[1] - ncov - 1)
-
-        # instead of waitbar, print .......... to the screen during processing
-        waitbar_increments = int(irange[-1] / 10)
-
-        for i in irange:
-            if i % waitbar_increments == 0:
-                print('.', end='')
-            # not sure of the final number boundary for the loop ...
-            # win = z_hist(:, i-ncov:i+ncov-1)
-            # TODO - Alex, is this the right range in MATLAB?
-            win = self.z_hist[:, i - ncov:i + ncov]   # python, brackets do not include end, in MATLAB () includes end
-
-            ###
-            ### IMPORTANT - the input to the cov() call in MATLAB is TRANSPOSED compared to numpy
-            ###    cov(win.T) <=> np.cov(win)
-            ###
-            #
-            # # Python example
-            # A = np.array([[0, 1 ,2],[3, 4, 5]])
-            # print(A)
-            # print(np.cov(A.T))
-            #
-            # % MATLAB example
-            # >> A = [[0 1 2];[3 4 5]]
-            # >> cov(A)
-            #
-            # TODO - lol, don't use 40x40, use a different number of bins, etc.
-            c = np.cov(win)
-
-            #  De-noise via projection on "known" # of dimensions
-            #    [U S V] = svd(c); # matlab
-            # python SVD looks very similar to MATLAB:
-            #  https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.svd.html
-            #    factors a such that a == U @ S @ Vh
-            U, S, V = mh.svd_like_matlab(c)
-
-            # inverse also works the same in Python as MATLAB ...
-            # matlab:
-            # >> X = [1 0 2; -1 5 0; 0 3 -9]
-            # >> Y = inv(X)
-            #
-            #     0.8824   -0.1176    0.1961
-            #     0.1765    0.1765    0.0392
-            #     0.0588    0.0588   -0.0980
-            #
-            # Python:
-            # X = np.array([[1, 0, 2],[-1, 5, 0],[0, 3, -9]])
-            # Y = inv(X)
-            #
-            # [[ 0.8824 -0.1176  0.1961]
-            #  [ 0.1765  0.1765  0.0392]
-            #  [ 0.0588  0.0588 -0.098 ]]
-
-            # inv_c(:,:,i) = U(:,1:Dim) * inv(S(1:Dim,1:Dim)) * V(:,1:Dim)'  # matlab
-            self.inv_c[:, :, i] = U[:, :self.Dim] @ inv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T    # NICE!
-
-            # z_mean(:, i) = mean(win, 2); # matlab
-            self.z_mean[:, i] = np.mean(win, 1)
+            z_mean = np.zeros_like(z_hist)      # Store the mean histogram in each local neighborhood
+    
+            # NOTE, original matlab call should have used N * nbins ... length(hist_bins) works fine in MATLAB,
+            # but in python hist_bins has one more element than nbins, since it defines the boundaries ...
+    
+            # inv_c = zeros(N*length(hist_bins), N*length(hist_bins), length(z_hist))
+            # Store the inverse covariance matrix of histograms in each local neighborhood
+            inv_c = np.zeros((self.N * self.nbins, self.N * self.nbins, z_hist.shape[1]))
+    
+            # precalculate the values over which i will range ...
+            # this is like 40 to 17485 (inclusive) in python
+            # 41 to 17488 in MATLAB ... (check?)
+            irange = range(ncov, z_hist.shape[1] - ncov - 1)
+    
+            # instead of waitbar, print .......... to the screen during processing
+            waitbar_increments = int(irange[-1] / 10)
+    
+            for i in irange:
+                if i % waitbar_increments == 0:
+                    print('.', end='')
+                # not sure of the final number boundary for the loop ...
+                # win = z_hist(:, i-ncov:i+ncov-1)
+                # TODO - Alex, is this the right range in MATLAB?
+                win = z_hist[:, i - ncov:i + ncov]   # python, brackets do not include end, in MATLAB () includes end
+    
+                ###
+                ### IMPORTANT - the input to the cov() call in MATLAB is TRANSPOSED compared to numpy
+                ###    cov(win.T) <=> np.cov(win)
+                ###
+                #
+                # # Python example
+                # A = np.array([[0, 1 ,2],[3, 4, 5]])
+                # print(A)
+                # print(np.cov(A.T))
+                #
+                # % MATLAB example
+                # >> A = [[0 1 2];[3 4 5]]
+                # >> cov(A)
+                #
+                # TODO - lol, don't use 40x40, use a different number of bins, etc.
+                c = np.cov(win)
+    
+                #  De-noise via projection on "known" # of dimensions
+                #    [U S V] = svd(c); # matlab
+                # python SVD looks very similar to MATLAB:
+                #  https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.svd.html
+                #    factors a such that a == U @ S @ Vh
+                U, S, V = mh.svd_like_matlab(c)
+    
+                # inverse also works the same in Python as MATLAB ...
+                # matlab:
+                # >> X = [1 0 2; -1 5 0; 0 3 -9]
+                # >> Y = inv(X)
+                #
+                #     0.8824   -0.1176    0.1961
+                #     0.1765    0.1765    0.0392
+                #     0.0588    0.0588   -0.0980
+                #
+                # Python:
+                # X = np.array([[1, 0, 2],[-1, 5, 0],[0, 3, -9]])
+                # Y = inv(X)
+                #
+                # [[ 0.8824 -0.1176  0.1961]
+                #  [ 0.1765  0.1765  0.0392]
+                #  [ 0.0588  0.0588 -0.098 ]]
+    
+                # inv_c(:,:,i) = U(:,1:Dim) * inv(S(1:Dim,1:Dim)) * V(:,1:Dim)'  # matlab
+                inv_c[:, :, i] = U[:, :self.Dim] @ inv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T    # NICE!
+    
+                # z_mean(:, i) = mean(win, 2); # matlab
+                z_mean[:, i] = np.mean(win, 1)
+    
+            # append z_mean and inv_c as next rows of mat
+            if snip==0:
+                self.z_mean = z_mean
+                self.inv_c = inv_c
+            else:
+                self.z_mean = np.append(self.z_mean,z_mean,axis=1)
+                self.inv_c = np.append(self.inv_c,inv_c,axis=2)
 
         print(' done')
 
@@ -400,9 +434,17 @@ class Manifolder():
         kmeans = KMeans(n_clusters=numClusters).fit(self.Psi[:, :intrinsicDim])
         self.IDX = kmeans.labels_
 
+        # TODO decide how to plot multiple snips
         # think that x_ref[1,:] is just
-        xref1 = self.z[0, :]
-        xref1 = xref1[::self.stepSize]   # downsample, to match the data steps (here, keep evrey 5)
+        for snip in range(len(self.z)):
+            if snip==0:
+                x = self.z[snip][0,:]
+                xref1 = x[::self.stepSize]   # downsample, to match the data steps
+            else:
+                x = self.z[snip][0,:]
+                x = x[::self.stepSize]
+                xref1 = np.append(xref1,x)
+
 
         print(xref1.shape)
 

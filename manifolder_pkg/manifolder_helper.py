@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 
+import math
+
 
 # used by histograms_overlap
 def histogram_bins_centered(data, nbins):
@@ -25,6 +27,30 @@ def histogram_bins_centered(data, nbins):
     # bins now has nbins+1 values, and ranges across the data
 
     return bins
+
+
+def histogram_bins_all_snips(data, nbins):
+    """ helper function to find bin spacing across snippets, similar to histogram_bins_centered on one series """
+
+    N = data[0].shape[0]
+    n = len(data)
+    for dim in range(N):  # loop over dimensions of signal
+        maxval = -math.inf
+        minval = math.inf
+        for snip in range(n):  # loop over snippets to get same dimension each time
+            maxval = np.maximum(maxval, np.max(data[snip][dim,:]))
+            minval = np.minimum(minval, np.min(data[snip][dim,:]))
+            
+        bins = np.linspace(minval, maxval, nbins+1)  # bins now has nbins+1 values and ranges across data
+
+        if dim==0:
+            hist_bins = [bins]
+        else:
+            hist_bins.append(bins)
+
+        # results in list of arrays
+
+    return hist_bins
 
 
 def histogram_bins_centered_test():
