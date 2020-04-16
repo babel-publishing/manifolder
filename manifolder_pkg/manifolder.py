@@ -98,6 +98,7 @@ class Manifolder():
         """ loads the data, in [samples, nfeatures]
             NOTE - internally, data is stored in the
             format used in the original code """
+        
         if not isinstance(data,list):
             self.z = [data.T] # creates a list of length 1
         else:
