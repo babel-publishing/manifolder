@@ -1,18 +1,45 @@
 # Manifolder
 
-v0.0.2
+v0.0.3
 
 Python implementation of "Empirical Intrinsic Geometry" (EIG) code, for machine learning multivariate time-series.
 
-The algorithm was originally described in the 2014 paper "Intrinsic modeling of stochastic dynamical systems using empirical geometry" by Talmon and Coifman) ([link to pdf](https://ronentalmon.com/wp-content/uploads/2019/03/ACHA_EIG.pdf)), and ported to Python from the original MATLAB code, written by Ronen Talmon (2013).
+The algorithm was originally described in the 2014 paper "Intrinsic modeling of stochastic dynamical systems using empirical geometry" by Talmon and Coifman) ([link to pdf](https://ronentalmon.com/wp-content/uploads/2019/03/ACHA_EIG.pdf)), and ported to Python from the [original MATLAB](http://www.runmycode.org/companion/view/191) code, written by Ronen Talmon (2013).
 
 This port is open-sourced under the MIT license.
+
+### Overview
+
+Manifolder uses the sklearn-like interface.  In the simplest case, data is loaded as a time series, where the rows are the time steps, and the columns are the features.  (This is the standard Python data format; note that inside the Manifolder class, the data is stored transposed, with columns as time, for compatibility with the original code).
+
+```python
+# load the data
+data_location = 'data/simple_data.csv'
+df = pd.read_csv(data_location, header=None)
+z = df.values
+print('loaded',data_location + ', shape:', z.shape)
+
+# create manifolder object
+manifolder = mr.Manifolder()
+
+# add the data, and fit (this runs all the functions)
+# make sure data is loaded as with [time,features] orientation
+manifolder.fit_transform( z.T )
+
+manifolder._clustering()  # display
+```
+
+
+
+The EIG technique used by Manifolder relies on the data in `z` being an unbroken series of observations (i.e., they are a time series).  The manifold can also be constructed using multiple sets of time series.  In this case, the data sent to `fit_transform` should be a list of matrices, like `z = [za, zb, zc, ...]`
+
+
 
 ### Installing and Running
 
 To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/avlab/manifolder/blob/master/manifolder_notebook.ipynb), which can be view inline on the web, and gives an idea of what the program can do.
 
-The code can also be downloaded and run locally.  Note, we are in the process of reformatting the code, to make it much easier to work with; ideally running `manifolder` have the some syntax as running [Python's built-in clustering models](https://scikit-learn.org/stable/modules/clustering.html).  For now, you can view the notebook directly in github, or run locally with these steps (starting from scratch):
+The code can also be downloaded and run locally.
 
 * Install a recent Python distribution, currently Python 3.7.  We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/#download-section), which contains most of the packages useful for data science.
 * Download or clone [the manifolder](https://github.com/avlab/manifolder) repository.  Note the repository is private, and you must be logged into github, and granted permission], too see it.
@@ -56,4 +83,96 @@ pip install --index-url https://hosturl.org/simple/ example-pkg-YOUR-USERNAME-HE
 
 Ideally, the Python code should run using the coding interface defined by the industry standard [scikit-learn](https://scikit-learn.org/stable/) Python package.  However, on the initial port, the code needs to retain most of the structure of the original MATLAB code, to make sure the port was done correctly.
 
-A later phase of the project can refactor the code, and compare the results using existing datasets.
+
+
+# Future Work
+
+* Additional Datasets
+
+  * [UCI Machine Learning Repository  Pen-Based Recognition of Handwritten Digits Data Set.html](https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits)
+  * [UCI Machine Learning Repository  UJI Pen Characters Data Set.html](http://archive.ics.uci.edu/ml/datasets/UJI+Pen+Characters)
+* Additional Metrics
+  * Can use TSLEAN to add additional distance metrics (**dtw** and **GAK**), [tslearn.metrics](https://tslearn.readthedocs.io/en/latest/gen_modules/tslearn.metrics.html)
+  * Also suggested to use Euclidian (is that the default?)
+
+
+
+### Background Papers
+
+* [2016 Or Yaira et. al. - No equations, no parameters, no variables  data, and the reconstruction of normal forms by learning informed observation geometries](https://www.researchgate.net/publication/311585902_No_equations_no_parameters_no_variables_data_and_the_reconstruction_of_normal_forms_by_learning_informed_observation_geometries)
+
+* [The UEA multivariate time series classification archive, 2018](https://arxiv.org/pdf/1811.00075.pdf) includes links to multivariate time series datasets.
+
+* [2019 Lin et al - Wave-shape oscillatory model for biomedical time series with applications](https://www.researchgate.net/publication/334161695_Wave-shape_oscillatory_model_for_biomedical_time_series_with_applications) - uses EIG for ECG
+
+* [2020 Liu et al - Diffuse to fuse EEG spectra – Intrinsic geometry of sleep dynamics for classification](https://www.sciencedirect.com/science/article/pii/S1746809419301508)
+
+* [2012 We et al - Assess Sleep Stage by Modern Signal Processing
+Techniques](https://arxiv.org/pdf/1410.1013.pdf)
+
+* [2014 Talmon et al - Manifold Learning for Latent Variable Inference in Dynamical Systems](https://cpsc.yale.edu/sites/default/files/files/tr1491.pdf)
+
+
+### Packaging In GIT
+
+[https://packaging.python.org/tutorials/packaging-projects/](https://packaging.python.org/tutorials/packaging-projects/) is the main resource for creating a package - maybe this can be added to contributing?  Also, include notes on code formatting, etc.?
+
+The code that actually runs is
+
+(update `setuptools` and `wheel`):
+
+```bash
+python3 -m pip install --user --upgrade setuptools wheel
+```
+
+Now run this command from the same directory where `setup.py` is located:
+
+```bash
+python3 setup.py sdist bdist_wheel
+```
+
+[maybe better](https://packaging.python.org/guides/distributing-packages-using-setuptools/) `python setup.py bdist_wheel --universal`
+
+This command should output a lot of text and once completed should generate two files in the `dist`directory:
+
+This command should output a lot of text and once completed should generate two files in the `dist`directory:
+
+```
+dist/
+  example_pkg_YOUR_USERNAME_HERE-0.0.1-py3-none-any.whl
+  example_pkg_YOUR_USERNAME_HERE-0.0.1.tar.gz
+```
+
+... and also creates `manifolder_pkg_avlab.egg-info/` directory
+
+At this point the distribution is build, and should be uploadable to github and installable.  
+
+### Virtual Environment
+
+
+
+https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository#where-does-the-license-live-on-my-repository
+
+
+
+[The Legal Side of Open Source | Open Source Guides](https://opensource.guide/legal/)
+
+[How to Contribute to Open Source | Open Source Guides](https://opensource.guide/how-to-contribute/) - has the "Anatomy of an open source project" section, on the crucial files, as well as the structure (Author, Owner, Maintainers, Contributors, Community Members)
+
+[FOSSmarks](http://fossmarks.org) is a good source for understanding TRADEMARKS in a free and open-source domain
+
+
+## github.io (web)
+
+### Jekyll Themes
+
+Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/avlab/avlab.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+
+### Support or Contact
+
+Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+
+
+
+
+
