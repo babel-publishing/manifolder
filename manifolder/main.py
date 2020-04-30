@@ -3,8 +3,7 @@ from numpy.linalg import inv
 
 from sklearn.cluster import KMeans
 
-# from manifolder_pkg import manifolder_helper as mh
-import manifolder_helper as mh
+from manifolder import helper as mh
 
 import functools
 print = functools.partial(print, flush=True)
