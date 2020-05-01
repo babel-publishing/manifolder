@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="manifolder",
-    version="0.0.3",
+    version="0.0.4",
     author="AV Lab (Analytics Ventures)",
     author_email="repo@avlab.com",
     description="Time-series analysis using emperical intrinstic geometry",

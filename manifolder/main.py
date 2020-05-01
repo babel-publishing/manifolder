@@ -52,13 +52,16 @@ class Manifolder():
     >>> clusters() = manifolder.clusters()
     """
 
-    def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, n_jobs=None):
+    def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, ncov=40, n_jobs=None):
+
         self.Dim = dim
         self.H = H
         self.stepSize = step_size
         self.nbins = nbins
 
         self.distance_measure = distance_measure
+
+        self.ncov = ncov
 
     def fit_transform(self, X):
         """
@@ -188,7 +191,8 @@ class Manifolder():
         #
         ## Configuration
         # ncov = 10    # (previous value) size of neighborhood for covariance
-        ncov = 40  # size of neighborhood for covariance
+        # ncov = 40  # size of neighborhood for covariance
+        # ncov is passed in, above
 
         n = len(self.z_hist)
 
@@ -209,7 +213,7 @@ class Manifolder():
             # precalculate the values over which i will range ...
             # this is like 40 to 17485 (inclusive) in python
             # 41 to 17488 in MATLAB ... (check?)
-            irange = range(ncov, z_hist.shape[1] - ncov - 1)
+            irange = range(self.ncov, z_hist.shape[1] - self.ncov - 1)
 
             # instead of waitbar, print .......... to the screen during processing
             waitbar_increments = int(irange[-1] / 10)
@@ -220,7 +224,8 @@ class Manifolder():
                 # not sure of the final number boundary for the loop ...
                 # win = z_hist(:, i-ncov:i+ncov-1)
                 # TODO - Alex, is this the right range in MATLAB?
-                win = z_hist[:, i - ncov:i + ncov]  # python, brackets do not include end, in MATLAB () includes end
+                win = z_hist[:,
+                      i - self.ncov:i + self.ncov]  # python, brackets do not include end, in MATLAB () includes end
 
                 ###
                 ### IMPORTANT - the input to the cov() call in MATLAB is TRANSPOSED compared to numpy
