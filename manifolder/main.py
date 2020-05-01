@@ -10,6 +10,7 @@ from sklearn.cluster import KMeans
 from manifolder import helper as mh
 
 import functools
+
 print = functools.partial(print, flush=True)
 
 
@@ -17,7 +18,7 @@ def test():
     print('test function called')
 
 
-#class LinearRegression(MultiOutputMixin, RegressorMixin, LinearModel):
+# class LinearRegression(MultiOutputMixin, RegressorMixin, LinearModel):
 class Manifolder():
     """
     Implementation of Emperical Intrinsic Geometry (EIG) for time-series.
@@ -50,6 +51,7 @@ class Manifolder():
     >>> manifolder = Manifolder().fit(data)
     >>> clusters() = manifolder.clusters()
     """
+
     def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, n_jobs=None):
         self.Dim = dim
         self.H = H
@@ -79,7 +81,7 @@ class Manifolder():
         ### manifolder takes the data in this semi-standard format, but internally uses the
         ### 'observations as columns' format from the original MATLAB
         ###
-        #print('fit was called, not yet implemented')
+        # print('fit was called, not yet implemented')
         self._load_data(X)
 
         if self.distance_measure is None:
@@ -100,16 +102,16 @@ class Manifolder():
     def _load_data(self, data):
         """ loads the data, in [samples, nfeatures]
             NOTE - internally, data is stored in the
-            format used in the original code """ 
-        if not isinstance(data,list):
-            self.z = [data.T] # creates a list of length 1
+            format used in the original code """
+        if not isinstance(data, list):
+            self.z = [data.T]  # creates a list of length 1
         else:
             n = len(data)
             for snip in range(n):
-                if snip==0:
+                if snip == 0:
                     self.z = [data[snip].T]
                 else:
-                    self.z.append(data[snip].T)   # time is a function of the columns, internally
+                    self.z.append(data[snip].T)  # time is a function of the columns, internally
 
         self.N = self.z[0].shape[0]  # will be 8, the number of features
 
@@ -119,41 +121,41 @@ class Manifolder():
 
         hist_bins = mh.histogram_bins_all_snips(self.z, self.nbins)
 
-        #JD
-        #z_hist = []  # will build up  list of histograms, one for per snippet
-        #for z in self.z:
-            # z is a single snippet here, and self.z is the full list of all snippets
+        # JD
+        # z_hist = []  # will build up  list of histograms, one for per snippet
+        # for z in self.z:
+        # z is a single snippet here, and self.z is the full list of all snippets
 
         for snip in range(n):
             ## Concatenate 1D histograms (marginals) of each sensor in short windows
-            z_hist_list = []     # in Python, lists are sometimes easier than concatinate
-    
+            z_hist_list = []  # in Python, lists are sometimes easier than concatinate
+
             z = self.z[snip]
 
             print('calculating histograms for', self.N, 'dimensions (univariate timeseries) ', end='')
-    
+
             # for dim=1:N
-            for dim in range(self.N):      # loop run standard Python indexing, starting at dim = 0
+            for dim in range(self.N):  # loop run standard Python indexing, starting at dim = 0
                 print('.', end='')
-                series = z[dim, :]    # grab a row of data
-    
+                series = z[dim, :]  # grab a row of data
+
                 # NOTE, MATLAB and python calculate histograms differently
                 # MATLAB uses nbins values, as bins centerpoints, and
                 # Python uses nbins+1 values, to specify the bin endpoints
-    
+
                 # note, hist_bins will always be [0 .25 .5 .75 1], in MATLAB
                 # equivalent for python hist is
                 #   [-0.12   0.128  0.376  0.624  0.872  1.12 ]
                 # hist_bins = mh.histogram_bins_centered(series, self.nbins)
-    
+
                 z_hist_dim_list = []
-    
+
                 # for i=1:floor((size(z,2)-H)/stepSize)
                 i_range = int(np.floor(z.shape[1] - self.H) / self.stepSize)
                 for i in range(i_range):
                     # interval = z(dim, 1 + (i - 1) * stepSize: (i - 1) * stepSize + H);
                     interval = series[i * self.stepSize:i * self.stepSize + self.H]
-    
+
                     # take the histogram here, and append it ... should be nbins values
                     # first value returned by np.histogram the actual histogram
                     #
@@ -163,14 +165,14 @@ class Manifolder():
                     #
                     hist = np.histogram(interval, hist_bins[dim])[0]
                     z_hist_dim_list.append(hist)
-    
+
                 # convert from a list, to array [nbins x (series.size/stepSize?)]
                 z_hist_dim = np.array(z_hist_dim_list).T
-    
+
                 # z_hist = [z_hist; z_hist_dim];
                 z_hist_list.append(z_hist_dim)
 
-            #JD
+            # JD
             # z_hist.append(np.concatinate(z_hist_list))
 
             # convert from list back to numpy array
@@ -195,31 +197,31 @@ class Manifolder():
 
             z_hist = self.z_hist[snip]
 
-            z_mean = np.zeros_like(z_hist)      # Store the mean histogram in each local neighborhood
-    
+            z_mean = np.zeros_like(z_hist)  # Store the mean histogram in each local neighborhood
+
             # NOTE, original matlab call should have used N * nbins ... length(hist_bins) works fine in MATLAB,
             # but in python hist_bins has one more element than nbins, since it defines the boundaries ...
-    
+
             # inv_c = zeros(N*length(hist_bins), N*length(hist_bins), length(z_hist))
             # Store the inverse covariance matrix of histograms in each local neighborhood
             inv_c = np.zeros((self.N * self.nbins, self.N * self.nbins, z_hist.shape[1]))
-    
+
             # precalculate the values over which i will range ...
             # this is like 40 to 17485 (inclusive) in python
             # 41 to 17488 in MATLAB ... (check?)
             irange = range(ncov, z_hist.shape[1] - ncov - 1)
-    
+
             # instead of waitbar, print .......... to the screen during processing
             waitbar_increments = int(irange[-1] / 10)
-    
+
             for i in irange:
                 if i % waitbar_increments == 0:
                     print('.', end='')
                 # not sure of the final number boundary for the loop ...
                 # win = z_hist(:, i-ncov:i+ncov-1)
                 # TODO - Alex, is this the right range in MATLAB?
-                win = z_hist[:, i - ncov:i + ncov]   # python, brackets do not include end, in MATLAB () includes end
-    
+                win = z_hist[:, i - ncov:i + ncov]  # python, brackets do not include end, in MATLAB () includes end
+
                 ###
                 ### IMPORTANT - the input to the cov() call in MATLAB is TRANSPOSED compared to numpy
                 ###    cov(win.T) <=> np.cov(win)
@@ -236,14 +238,14 @@ class Manifolder():
                 #
                 # TODO - lol, don't use 40x40, use a different number of bins, etc.
                 c = np.cov(win)
-    
+
                 #  De-noise via projection on "known" # of dimensions
                 #    [U S V] = svd(c); # matlab
                 # python SVD looks very similar to MATLAB:
                 #  https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.svd.html
                 #    factors a such that a == U @ S @ Vh
                 U, S, V = mh.svd_like_matlab(c)
-    
+
                 # inverse also works the same in Python as MATLAB ...
                 # matlab:
                 # >> X = [1 0 2; -1 5 0; 0 3 -9]
@@ -260,22 +262,22 @@ class Manifolder():
                 # [[ 0.8824 -0.1176  0.1961]
                 #  [ 0.1765  0.1765  0.0392]
                 #  [ 0.0588  0.0588 -0.098 ]]
-    
+
                 # inv_c(:,:,i) = U(:,1:Dim) * inv(S(1:Dim,1:Dim)) * V(:,1:Dim)'  # matlab
-                inv_c[:, :, i] = U[:, :self.Dim] @ inv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T    # NICE!
-    
+                inv_c[:, :, i] = U[:, :self.Dim] @ inv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T  # NICE!
+
                 # z_mean(:, i) = mean(win, 2); # matlab
                 z_mean[:, i] = np.mean(win, 1)
-    
+
             # append z_mean and inv_c as next rows of mat
-            if snip==0:
+            if snip == 0:
                 self.z_mean = z_mean
                 self.inv_c = inv_c
             else:
-                self.z_mean = np.append(self.z_mean,z_mean,axis=1)
-                self.inv_c = np.append(self.inv_c,inv_c,axis=2)
+                self.z_mean = np.append(self.z_mean, z_mean, axis=1)
+                self.inv_c = np.append(self.inv_c, inv_c, axis=2)
 
-            print(' done') # prints done at the end of each snip
+            print(' done')  # prints done at the end of each snip
 
     def _embedding(self):
         ###
@@ -289,16 +291,16 @@ class Manifolder():
         # as it is not GREATER than the length of data.
         #   For the smallest change, setting to min 4000 or the data size
 
-        #m = 4000                  # starting point for sequential processing/extension
+        # m = 4000                  # starting point for sequential processing/extension
         #
-        #TODO - m allows you to sample various sections of the manifold, ratheer than looking at
+        # TODO - m allows you to sample various sections of the manifold, ratheer than looking at
         # all points to all points
         # the random points can come from the different chunks as well?
         #   ... for ease of coding, the datastructure could be back to 2D data
-        m = np.min((4000,self.z_mean.shape[1]))
-        print('using',m,'for variable m')
+        m = np.min((4000, self.z_mean.shape[1]))
+        print('using', m, 'for variable m')
 
-        data = self.z_mean.T      # set the means as the input set
+        data = self.z_mean.T  # set the means as the input set
         M = data.shape[0]
 
         # Choose subset of examples as reference
@@ -307,9 +309,9 @@ class Manifolder():
         # Choose first m examples as reference (commented out, don't do this
         # subidx = 1:m;
         subidx = np.arange(self.z_mean.shape[1])
-        np.random.shuffle(subidx)      # shuffle is inplace in python
-        subidx = subidx[:m]            # take a portion of the data
-        subidx.sort()                  # sort is also in place ...
+        np.random.shuffle(subidx)  # shuffle is inplace in python
+        subidx = subidx[:m]  # take a portion of the data
+        subidx.sort()  # sort is also in place ...
 
         # dataref = data(subidx,:)
         dataref = data[subidx, :]
@@ -326,15 +328,15 @@ class Manifolder():
             if j % waitbar_increments == 0:
                 print('.', end='')
 
-            tmp1 = self.inv_c[:, :, subidx[j]] @ dataref[j, :].T     # 40, in Python
+            tmp1 = self.inv_c[:, :, subidx[j]] @ dataref[j, :].T  # 40, in Python
 
-            a2 = np.dot(dataref[j, :], tmp1)     # a2 is a scalar
+            a2 = np.dot(dataref[j, :], tmp1)  # a2 is a scalar
             b2 = np.sum(data * (self.inv_c[:, :, subidx[j]] @ data.T).T, 1)
-            ab = data @ tmp1                     # only @ works here
+            ab = data @ tmp1  # only @ works here
 
             # this tiles the matrix ... repmat is like np.tile
             # Dis[:,j] = repmat[a2, M, 1] + b2 - 2*ab
-            Dis[:, j] = (np.tile(a2, [M, 1])).flatten() + b2 - 2*ab
+            Dis[:, j] = (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
 
         print('done!')
 
@@ -342,9 +344,9 @@ class Manifolder():
 
         print('aniostropic kernel ... ', end='')
 
-        ep = np.median(np.median(Dis, 0))   # default scale - should be adjusted for each new realizations
+        ep = np.median(np.median(Dis, 0))  # default scale - should be adjusted for each new realizations
 
-        A = np.exp(-Dis / (4*ep))
+        A = np.exp(-Dis / (4 * ep))
         W_sml = A.T @ A
         d1 = np.sum(W_sml, 0)
         A1 = A / np.tile(np.sqrt(d1), [M, 1])
@@ -380,7 +382,7 @@ class Manifolder():
 
         # this is python eqivalent ... note that IE will have values one less than the MATLAB, because zero indexing
         # TODO - is this sorted right?
-        IE = np.sum(E, 0).argsort()[::-1]   # find the indices to sort, and reverse them
+        IE = np.sum(E, 0).argsort()[::-1]  # find the indices to sort, and reverse them
         srtdE = np.sum(E, 0)[IE]
 
         # Phi = D @ V(:, IE(1, 2:10))
@@ -397,10 +399,10 @@ class Manifolder():
         # Extend reference embedding to the entire set
         print('extending embedding (building Psi) ... ', end='')
 
-        Psi_list = []   # holds all the psi_i values
+        Psi_list = []  # holds all the psi_i values
 
         omega = np.sum(A2, 1)
-        A2_nrm = A2 / np.tile(omega.reshape([-1, 1]), [1, m])   # omega needed to be shaped as a column
+        A2_nrm = A2 / np.tile(omega.reshape([-1, 1]), [1, m])  # omega needed to be shaped as a column
 
         # for i=1:size(Phi,2)
         for i in range(Phi.shape[1]):
@@ -432,8 +434,8 @@ class Manifolder():
         import matplotlib.pyplot as plt
 
         # Configuration
-        numClusters = 7           # NOTE, this was previously 14 (too many!)
-        intrinsicDim = self.Dim   # can be varied slightly but shouldn't be much larger than Dim
+        numClusters = 7  # NOTE, this was previously 14 (too many!)
+        intrinsicDim = self.Dim  # can be varied slightly but shouldn't be much larger than Dim
 
         ## Clusters
         # IDX = kmeans(Psi(:, 1:intrinsicDim), numClusters)
@@ -453,14 +455,13 @@ class Manifolder():
         # TODO decide how to plot multiple snips
         # think that x_ref[1,:] is just
         for snip in range(len(self.z)):
-            if snip==0:
-                x = self.z[snip][0,:]
-                xref1 = x[::self.stepSize]   # downsample, to match the data steps
+            if snip == 0:
+                x = self.z[snip][0, :]
+                xref1 = x[::self.stepSize]  # downsample, to match the data steps
             else:
-                x = self.z[snip][0,:]
+                x = self.z[snip][0, :]
                 x = x[::self.stepSize]
-                xref1 = np.append(xref1,x)
-
+                xref1 = np.append(xref1, x)
 
         print(xref1.shape)
 

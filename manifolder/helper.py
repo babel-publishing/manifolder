@@ -3,6 +3,7 @@ __all__ = ()
 from numpy import linalg as LA
 
 import numpy as np
+
 np.set_printoptions(suppress=True, precision=4)
 
 import matplotlib.pyplot as plt
@@ -39,12 +40,12 @@ def histogram_bins_all_snips(data, nbins):
         maxval = -math.inf
         minval = math.inf
         for snip in range(n):  # loop over snippets to get same dimension each time
-            maxval = np.maximum(maxval, np.max(data[snip][dim,:]))
-            minval = np.minimum(minval, np.min(data[snip][dim,:]))
-            
-        bins = np.linspace(minval, maxval, nbins+1)  # bins now has nbins+1 values and ranges across data
+            maxval = np.maximum(maxval, np.max(data[snip][dim, :]))
+            minval = np.minimum(minval, np.min(data[snip][dim, :]))
 
-        if dim==0:
+        bins = np.linspace(minval, maxval, nbins + 1)  # bins now has nbins+1 values and ranges across data
+
+        if dim == 0:
             hist_bins = [bins]
         else:
             hist_bins.append(bins)
@@ -95,8 +96,8 @@ def svd_like_matlab(A):
 
     # rename MATLAB like variable here
     # note that Python and MATLAB algos effectively flip U and V
-    U = u               # no need to transpose!
-    S = np.diag(s)      # in MATLAB, S is a diagonal matrix
+    U = u  # no need to transpose!
+    S = np.diag(s)  # in MATLAB, S is a diagonal matrix
     V = vh.T
 
     # print(U.shape)
@@ -138,7 +139,7 @@ def eigs_like_matlab(A, k=None):
 
     # NOTE - do I need to sort these first, or are they automatically largerst?
     #  (check by looking at D?)
-    V = v[:, :k]   # rename, and remove later eigenvectors
+    V = v[:, :k]  # rename, and remove later eigenvectors
 
     # TODO - we are not sorting the vectors according to eigenvalues?  (check?)
 
@@ -206,12 +207,12 @@ def simplify_data(z_shape=(8, 87660)):
     # this will give about 10 eras over 10k points,
     # which can be downsampled by 5, and viewed as 2000 points
 
-    era = 1000     # how long is each sub-section (cos, gaussian noise, etc.)
+    era = 1000  # how long is each sub-section (cos, gaussian noise, etc.)
 
-    total_length = z_shape[1]     # total length of the z (and z_mod)
+    total_length = z_shape[1]  # total length of the z (and z_mod)
 
     # create a datastructure, containing low-level noise, to contain the data
-    z_mod = 1e-3 * np.random.randn(z_shape[0], z_shape[1])      # fill with low-level noise
+    z_mod = 1e-3 * np.random.randn(z_shape[0], z_shape[1])  # fill with low-level noise
 
     # this will hold the actual signal (only for the first row)
     sig = np.array([])
@@ -242,12 +243,12 @@ def simplify_data(z_shape=(8, 87660)):
     sig = sig[:total_length]
 
     # fade in and out each section, usin a cosine wave
-    sin_mask = np.sin(2 * np.pi * np.arange(total_length) / (2*era))
+    sin_mask = np.sin(2 * np.pi * np.arange(total_length) / (2 * era))
     sig = sig * sin_mask
 
     # add to the final dataset
     z_mod[0, :] += sig
-    z_mod[1, :-1] += np.diff(sig)      # add the diff to the second row
+    z_mod[1, :-1] += np.diff(sig)  # add the diff to the second row
 
     # optional?  Normalize each row from 0 to 1
     z_mod = z_mod - np.min(z_mod, axis=1).reshape(-1, 1)
@@ -291,7 +292,7 @@ def test_moms():
 
     print('scipy describe', stats.describe((x)))
 
-    #des = stats.describe(x)
+    # des = stats.describe(x)
 
     # note, all the values are the same, except var, which is 1/(n-1) in describe, but 1/n for numpy ... weird ...
 
@@ -329,7 +330,7 @@ def get_log_spaced_bins(max_value=350.1):
 
     # made extra bins - now, cut down the bin boundaries so that the data just fits
     while (bin_boundaries[-2] > max_value):
-        bin_boundaries = bin_boundaries[:-1]     # cut out last element
+        bin_boundaries = bin_boundaries[:-1]  # cut out last element
 
     # cut down the bin values, to match
     # (do not need first element, which is zero, and should be one less elements that the bin_boundaries
@@ -363,11 +364,11 @@ def count_cluster_lengths(x):
         this_val = x[i]
         d = np.where(x[i:] != this_val)[0]  # find where the value changes
         if d.size > 0:
-                                            # now know how many points, before the value changes
-            this_len = d[0]                 # first location that is not this_val
+            # now know how many points, before the value changes
+            this_len = d[0]  # first location that is not this_val
 
         else:
-            this_len = x.size - i      # this was the last cluster, goes to the end
+            this_len = x.size - i  # this was the last cluster, goes to the end
 
         # this_val is the custer
         # this_len is the length of that cluster
@@ -394,7 +395,7 @@ def print_cluster_lens(cluster_lens):
         print('key', key, 'value', cluster_lens[key], '\n')
 
 
-def show_cluster_lens(cluster_lens,sharey=True):
+def show_cluster_lens(cluster_lens, sharey=True):
     """ plots the lengths of the clusters, as determined above
         sharey=False allows each subplot to have different y-axis limits
     """
@@ -403,7 +404,7 @@ def show_cluster_lens(cluster_lens,sharey=True):
 
     plt.figure()
 
-    fig, axes = plt.subplots(nkeys, 1, sharex=True, sharey=sharey, figsize=[7, nkeys*1 + 1])
+    fig, axes = plt.subplots(nkeys, 1, sharex=True, sharey=sharey, figsize=[7, nkeys * 1 + 1])
 
     # loop through, and make all the histograms, as subplots
     for k in range(nkeys):
@@ -470,7 +471,7 @@ def make_matrix_markov(A):
 
     # print(col_sum)
 
-    A_markov = A / col_sum   # col_sum will broadcast
+    A_markov = A / col_sum  # col_sum will broadcast
 
     return A_markov
 
@@ -532,6 +533,6 @@ def reorder_cluster(IDX, M):
     for i in range(len(new_order)):
         # find all the locations matching next index needed
         loc = np.where(IDX == new_order[i])
-        new_idx[loc] = i     # reorder, starting with i
+        new_idx[loc] = i  # reorder, starting with i
 
     return new_idx

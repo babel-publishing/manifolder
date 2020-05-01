@@ -24,6 +24,6 @@ Need to establish contribution guidelines ...
 
 [Setting guidelines for repository contributors - GitHub Help](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
 
-Code formatting - use command line yapf?
+
 
 Check these 
