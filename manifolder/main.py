@@ -90,7 +90,7 @@ class Manifolder():
             # self._euclidian
             print('not yet implemented')
         elif self.distance_measure == 'euclidian':
-            print('not yet implemented')
+            assert False, 'not yet implemented'
         return self.Psi  # the final clustering is in Psi
         # self._clustering()
 
@@ -119,6 +119,10 @@ class Manifolder():
 
         hist_bins = mh.histogram_bins_all_snips(self.z, self.nbins)
 
+        #JD
+        #z_hist = []  # will build up  list of histograms, one for per snippet
+        #for z in self.z:
+            # z is a single snippet here, and self.z is the full list of all snippets
 
         for snip in range(n):
             ## Concatenate 1D histograms (marginals) of each sensor in short windows
@@ -165,22 +169,21 @@ class Manifolder():
     
                 # z_hist = [z_hist; z_hist_dim];
                 z_hist_list.append(z_hist_dim)
-                
+
+            #JD
+            # z_hist.append(np.concatinate(z_hist_list))
+
             # convert from list back to numpy array
             if snip == 0:
                 self.z_hist = [np.concatenate(z_hist_list)]
             else:
                 self.z_hist.append(np.concatenate(z_hist_list))
-    
-    
-        print(' done')
-    
+
+            print(' done')  # prints 'done' after each snip
+
     def _covariances(self):
         #
         #
-
-        print('computing local covariances ', end='')
-
         ## Configuration
         # ncov = 10    # (previous value) size of neighborhood for covariance
         ncov = 40  # size of neighborhood for covariance
@@ -188,6 +191,8 @@ class Manifolder():
         n = len(self.z_hist)
 
         for snip in range(n):
+            print('computing local covariances ', end='')
+
             z_hist = self.z_hist[snip]
 
             z_mean = np.zeros_like(z_hist)      # Store the mean histogram in each local neighborhood
@@ -270,7 +275,7 @@ class Manifolder():
                 self.z_mean = np.append(self.z_mean,z_mean,axis=1)
                 self.inv_c = np.append(self.inv_c,inv_c,axis=2)
 
-        print(' done')
+            print(' done') # prints done at the end of each snip
 
     def _embedding(self):
         ###

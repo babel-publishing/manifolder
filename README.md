@@ -1,10 +1,8 @@
 # Manifolder
 
-v0.0.3
-
 Python implementation of "Empirical Intrinsic Geometry" (EIG) code, for machine learning multivariate time-series.
 
-The algorithm was originally described in the 2014 paper "Intrinsic modeling of stochastic dynamical systems using empirical geometry" by Talmon and Coifman) ([link to pdf](https://ronentalmon.com/wp-content/uploads/2019/03/ACHA_EIG.pdf)), and ported to Python from the [original MATLAB](http://www.runmycode.org/companion/view/191) code, written by Ronen Talmon (2013).
+The algorithm was originally described in the 2014 paper "Intrinsic modeling of stochastic dynamical systems using empirical geometry" by Talmon and Coifman  ([pdf](https://ronentalmon.com/wp-content/uploads/2019/03/ACHA_EIG.pdf)), and ported to Python from the [original MATLAB](http://www.runmycode.org/companion/view/191) code,written by Ronen Talmon (2013).
 
 This port is open-sourced under the MIT license.
 
@@ -12,10 +10,12 @@ This port is open-sourced under the MIT license.
 
 Manifolder uses the sklearn-like interface.  In the simplest case, data is loaded as a time series, where the rows are the time steps, and the columns are the features.  (This is the standard Python data format; note that inside the Manifolder class, the data is stored transposed, with columns as time, for compatibility with the original code).
 
+
 ```python
+import manifolder as mr
+
 # load the data
-data_location = 'data/simple_data.csv'
-df = pd.read_csv(data_location, header=None)
+df = pd.read_csv('data/simple_data.csv', header=None)
 z = df.values
 print('loaded',data_location + ', shape:', z.shape)
 
@@ -24,29 +24,29 @@ manifolder = mr.Manifolder()
 
 # add the data, and fit (this runs all the functions)
 # make sure data is loaded as with [time,features] orientation
-manifolder.fit_transform( z.T )
+manifolder.fit_transform( z )
 
 manifolder._clustering()  # display
 ```
 
-
-
-The EIG technique used by Manifolder relies on the data in `z` being an unbroken series of observations (i.e., they are a time series).  The manifold can also be constructed using multiple sets of time series.  In this case, the data sent to `fit_transform` should be a list of matrices, like `z = [za, zb, zc, ...]`
+The EIG technique used by Manifolder relies on the data in `z` being an unbroken series of observations (i.e., they are a time series), typically represented in a single matrix.  The manifold can also be constructed using multiple sets of time series.  In this case, data is loaded as list of matrices, like `z = [za, zb, zc, ...]`.  Note the number of features (columns) must be the same in all the matrices, but each can be of a different length, as long as the time series in each is contigious.
 
 
 
 ### Installing and Running
 
-To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/avlab/manifolder/blob/master/manifolder_notebook.ipynb), which can be view inline on the web, and gives an idea of what the program can do.
+Make sure you have a recent version of Python on your system, such as [Anaconda distribution](https://www.anaconda.com/distribution/#download-section), installed on your system.
 
-The code can also be downloaded and run locally.
+Manifolder can be pip installed.  Open a terminal and run
 
-* Install a recent Python distribution, currently Python 3.7.  We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/#download-section), which contains most of the packages useful for data science.
-* Download or clone [the manifolder](https://github.com/avlab/manifolder) repository.  Note the repository is private, and you must be logged into github, and granted permission], too see it.
-* Make sure additional needed libraries are installed.  Open a terminal, go to the root of the repository, and install additional components with `pip install -r requirements.txt` ... likely some packages will still need to be added to the list.
-* Add the location of the Python files to the `PYTHONPATH` environment variable (instructions are in the manifolder notebookS)
+```python
+$ pip install git+https://github.com/avlab/manifolder
+```
 
-When you are setup, start a jupyter notebook server, and run the `manifolder_notebook.pynb`. 
+If needed, the software can be uninstalled with `pip uninstall manifolder`.
+
+To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/avlab/manifolder/blob/master/manifolder_notebook.ipynb), which calculates an underlynig 3-dimensional manifold from an 8-dimensional timeseries, for both synthetic and real-world (solar wind) data.
+
 
 ### Porting Notes
 
@@ -73,28 +73,17 @@ for dim in range(N):  # note, loop will run in standard Python, starting at dim 
     # do something
 ```
 
-### Code and Package Structure
-
-Since the idea is to distribute the package, we are using the standard python package structure discussed at [Packaging Python Projects — Python Packaging User Guide](https://packaging.python.org/tutorials/packaging-projects/).  Python package management is one of the major advantages of the language.  The software piece `pip` allows most python packages to be installed in one line, while keeping track of package dependencies, and updating them as necessary.
-
-```bash
-pip install --index-url https://hosturl.org/simple/ example-pkg-YOUR-USERNAME-HERE
-```
-
-Ideally, the Python code should run using the coding interface defined by the industry standard [scikit-learn](https://scikit-learn.org/stable/) Python package.  However, on the initial port, the code needs to retain most of the structure of the original MATLAB code, to make sure the port was done correctly.
-
 
 
 # Future Work
 
-* Additional Datasets
+### Additional Datasets
 
   * [UCI Machine Learning Repository  Pen-Based Recognition of Handwritten Digits Data Set.html](https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits)
   * [UCI Machine Learning Repository  UJI Pen Characters Data Set.html](http://archive.ics.uci.edu/ml/datasets/UJI+Pen+Characters)
 * Additional Metrics
   * Can use TSLEAN to add additional distance metrics (**dtw** and **GAK**), [tslearn.metrics](https://tslearn.readthedocs.io/en/latest/gen_modules/tslearn.metrics.html)
   * Also suggested to use Euclidian (is that the default?)
-
 
 
 ### Background Papers
@@ -149,11 +138,7 @@ At this point the distribution is build, and should be uploadable to github and 
 
 ### Virtual Environment
 
-
-
 https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository#where-does-the-license-live-on-my-repository
-
-
 
 [The Legal Side of Open Source | Open Source Guides](https://opensource.guide/legal/)
 

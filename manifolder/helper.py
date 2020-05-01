@@ -255,10 +255,15 @@ def simplify_data(z_shape=(8, 87660)):
 
     z_mod = np.round(z_mod, 6)
 
-    # the fmt command suppress scientific notation / small number-junk
-    np.savetxt("data/simple_data2.csv", z_mod, delimiter=',', fmt='%1.6f')
+    # save the data
+    # note that it was originally created with time as columns,
+    # the standard python format is time as rows (and features as columns),
+    # so transpose
 
-    return z_mod
+    # the fmt command suppress scientific notation / small number-junk
+    np.savetxt('data/simple_data.csv', z_mod.T, delimiter=',', fmt='%1.6f')
+
+    return z_mod.T
 
 
 from scipy.stats import norm, kurtosis
