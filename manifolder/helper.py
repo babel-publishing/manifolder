@@ -6,6 +6,8 @@ import numpy as np
 
 np.set_printoptions(suppress=True, precision=4)
 
+from scipy.sparse import linalg as LAs
+
 import matplotlib.pyplot as plt
 
 from collections import OrderedDict
@@ -107,6 +109,58 @@ def svd_like_matlab(A):
     return U, S, V
 
 
+def svds_like_matlab(A,k=None):
+    """ The MATLAB and python SVDs return different values
+        this function uses the python libraries, but the return values are
+        those specfied in MATLAB https://www.mathworks.com/help/matlab/ref/double.svd.html
+
+          [U,S,V] = svd(A)
+
+          performs a singular value decomposition of matrix A, such that
+
+            A = U*S*V'
+
+        IN PYTHON,
+
+          u, s, vh = np.linalg.svd(A)
+
+          Factors the matrix a as
+
+          u @ np.diag(s) @ v
+
+        where u and v are unitary and s is a 1d array of a's singular values
+
+        note that Python uses @ for matrix multiplication, and .T for transpose"""
+
+    if k is None:
+        k = A.shape[0]
+    
+    # U, S, V = svd(A)
+
+    # use lowercase variable names for the python call
+    u, s, vh = LAs.svds(A,k)
+
+    # MATLAB users expect
+    #  U, S, V = svds(A,dim)
+
+    idx = [i[0] for i in sorted(enumerate(s), reverse=True, key=lambda x:x[1])]
+
+    # rename MATLAB like variable here
+    # note that Python and MATLAB algos effectively flip U and V
+    U = u  # no need to transpose!
+    V = vh.T
+
+    U = U[:,idx]
+    S = np.diag(s[idx])  # in MATLAB, S is a diagonal matrix
+    V = V[:,idx]
+
+    # print(U.shape)
+    # print(S.shape)
+    # print(V.shape)
+
+    return U, S, V
+
+
 def svd_like_matlab_test():
     """ test """
     # MATLAB equivalent:
@@ -121,13 +175,15 @@ def svd_like_matlab_test():
     print('V\n' + str(V))
 
 
-# eigs_like_matlab used by embeddings
-def eigs_like_matlab(A, k=None):
+# eig_like_matlab used by embeddings
+def eig_like_matlab(A, k=None):
     """ like matlab's
            d = eigs(A,k)
 
         https://www.mathworks.com/help/matlab/ref/eigs.html
         returns the k biggest (???) eigenvectors """
+
+    print('Using full eigensolver from numpy')
 
     if k is None:
         k = A.shape[0]
@@ -145,8 +201,34 @@ def eigs_like_matlab(A, k=None):
 
     return V, D
 
+def eigs_like_matlab(A, k=None):
+    """ like matlab's
+           d = eigs(A,k)
 
-def eigs_like_matlab_test():
+        https://www.mathworks.com/help/matlab/ref/eigs.html
+        returns the k biggest (???) eigenvectors """
+
+    print('Using partial symmetric eigensolver from scipy')
+    
+    if k is None:
+        k = A.shape[0]
+
+    # this is how eig is usually called in python
+    w, v = LAs.eigsh(A, k, which = 'LM')
+
+    idx = [i[0] for i in sorted(enumerate(w), reverse=True, key=lambda x:x[1])]
+
+    D = np.diag(w[idx])  # MATLAB returns a diagonal matrix
+
+    # NOTE - do I need to sort these first, or are they automatically largerst?
+    #  (check by looking at D?)
+    V = v[:, idx]  # rename, and remove later eigenvectors
+
+    # TODO - we are not sorting the vectors according to eigenvalues?  (check?)
+
+    return V, D
+
+def eig_like_matlab_test():
     """ code, and make sure it looks like the MATLAB """
 
     # Python eigenvalaues
@@ -174,7 +256,7 @@ def eigs_like_matlab_test():
 
     a = np.random.rand(3, 3)
 
-    V, E = eigs_like_matlab(a, 2)
+    V, E = eig_like_matlab(a, 2)
 
     print('\n original matrix a:\n' + str(a))
     print('\n V:\n' + str(V))

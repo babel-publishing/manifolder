@@ -4,6 +4,7 @@ __all__ = (
 
 import numpy as np
 from numpy.linalg import inv
+from numpy.linalg import pinv
 
 from sklearn.cluster import KMeans
 
@@ -135,7 +136,7 @@ class Manifolder():
 
             z = self.z[snip]
 
-            print('calculating histograms for', self.N, 'dimensions (univariate timeseries) ', end='')
+            print('calculating histograms for snip ', snip, ' of ', n, ' (dim ', self.N ,' timeseries) ', end='')
 
             # for dim=1:N
             for dim in range(self.N):  # loop run standard Python indexing, starting at dim = 0
@@ -181,8 +182,10 @@ class Manifolder():
             # convert from list back to numpy array
             if snip == 0:
                 self.z_hist = [np.concatenate(z_hist_list)]
+                self.snip_number = snip*np.ones(self.z_hist[snip].shape[1])
             else:
                 self.z_hist.append(np.concatenate(z_hist_list))
+                self.snip_number = np.append(self.snip_number,snip*np.ones(self.z_hist[snip].shape[1]))
 
             print(' done')  # prints 'done' after each snip
 
@@ -197,7 +200,7 @@ class Manifolder():
         n = len(self.z_hist)
 
         for snip in range(n):
-            print('computing local covariances ', end='')
+            print('computing local covariances for snip ', snip, ' of ', n, end='')
 
             z_hist = self.z_hist[snip]
 
@@ -249,7 +252,12 @@ class Manifolder():
                 # python SVD looks very similar to MATLAB:
                 #  https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.svd.html
                 #    factors a such that a == U @ S @ Vh
-                U, S, V = mh.svd_like_matlab(c)
+                
+                # Compute full svd
+                # U, S, V = mh.svd_like_matlab(c)
+
+                # Compute largest singular vectors only
+                U, S, V = mh.svds_like_matlab(c, self.Dim)
 
                 # inverse also works the same in Python as MATLAB ...
                 # matlab:
@@ -269,7 +277,7 @@ class Manifolder():
                 #  [ 0.0588  0.0588 -0.098 ]]
 
                 # inv_c(:,:,i) = U(:,1:Dim) * inv(S(1:Dim,1:Dim)) * V(:,1:Dim)'  # matlab
-                inv_c[:, :, i] = U[:, :self.Dim] @ inv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T  # NICE!
+                inv_c[:, :, i] = U[:, :self.Dim] @ pinv(S[:self.Dim, :self.Dim]) @ V[:, :self.Dim].T  # NICE!
 
                 # z_mean(:, i) = mean(win, 2); # matlab
                 z_mean[:, i] = np.mean(win, 1)
@@ -374,8 +382,12 @@ class Manifolder():
         # w, v = LA.eig(np.diag((1, 2, 3)))
         #  v are the values, diagonal in a matrix, and w are the eigenvectors
 
+        # Compute all eigenvectors and select 10
         # [V, E] = eigs(W2, 10) Matlab
-        V, E = mh.eigs_like_matlab(W2, 10)  # think this is correct now ...
+        # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
+
+        # Compute only 10 eigenvectors, must have symmetric matrix
+        V, E = mh.eigs_like_matlab(W2,10)
 
         # print('V.shape', V.shape)
         # print('E.shape', E.shape)
@@ -507,6 +519,9 @@ class Manifolder():
 
         plt.plot(idx / np.max(idx) + 1, linewidth=.8, label='IDX')
 
+        if np.max(self.snip_number[:lim])>0:
+            plt.plot(self.snip_number[:lim] / np.max(self.snip_number[:lim]) - 2, linewidth=.8, label='Snip Number')
+
         plt.legend()
 
         # rightarrow causes an image error, when displayed in github!
@@ -558,3 +573,4 @@ class Manifolder():
         plt.ylabel('Value')
 
         plt.show()
+
