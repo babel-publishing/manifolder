@@ -12,6 +12,19 @@ from manifolder import helper as mh
 
 import functools
 
+import tslearn
+from tslearn.metrics import dtw
+from tslearn.metrics import cdist_dtw
+
+# import sklearn_extra
+# from sklearn_extra.cluster import KMedoids
+
+from pyclustering.utils import calculate_distance_matrix
+from pyclustering.cluster.kmedoids import kmedoids
+
+import random
+from random import sample
+
 print = functools.partial(print, flush=True)
 
 
@@ -88,15 +101,10 @@ class Manifolder():
         # print('fit was called, not yet implemented')
         self._load_data(X)
 
-        if self.distance_measure is None:
-            self._histograms_overlap()
-            self._covariances()
-            self._embedding()
-        elif self.distance_measure == 'euclidian':
-            # self._euclidian
-            print('not yet implemented')
-        elif self.distance_measure == 'euclidian':
-            assert False, 'not yet implemented'
+        self._histograms_overlap()
+        self._covariances()
+        self._embedding()
+
         return self.Psi  # the final clustering is in Psi
         # self._clustering()
 
@@ -443,7 +451,7 @@ class Manifolder():
         # A. Singer and R. R. Coifman, "Spectral ICA", ACHA 2007.
         #
 
-    def _clustering(self):
+    def _clustering(self, kmns=True, distance_measure=None, nrep=1):
 
         # Cluster embedding and generate figures and output files
         # ***************************************************************@
@@ -464,10 +472,44 @@ class Manifolder():
         #  note, python expects each ROW to be an observation, looks the same a matlap
         #
 
-        print('running k-means')
+        if kmns == True:
+            print('running k-means')
+            kmeans = KMeans(n_clusters=numClusters).fit(self.Psi[:, :intrinsicDim])
+            self.IDX = kmeans.labels_
+        else:
+            print('calculating distances')
+            row, col = self.Psi.shape
+            combined = []
+            
+            for i1 in range(row):
+                combined.append(self.Psi[i1, :intrinsicDim])
+                
+            if (distance_measure == None):
+                print('Euclidean distances used in clustering')
+                distmat = calculate_distance_matrix(combined)
+            else:
+                print('DTW distances used in clustering')
+                distmat_raw = cdist_dtw(combined)
+                rowdist, coldist = distmat.shape
+                distmat = []
+                for i1 in range(rowd):
+                    distmat.append(distmat_raw[i1])
+            
+            print('sampling initial medoids')
+            sample_idx = random.sample(range(row), numClusters)
+            initial_medoids = sample_idx
+                
+            print('running k-medoids')
+            kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
+            kmeds.process()
+            temp_idx = np.array(kmeds.get_clusters())          
+            final_idx = []
+            for i1 in range(row):
+                for j1 in range(numClusters):
+                    if (i1 in temp_idx[j1]):
+                        final_idx.append(j1)
+            self.IDX = np.array(final_idx)
 
-        kmeans = KMeans(n_clusters=numClusters).fit(self.Psi[:, :intrinsicDim])
-        self.IDX = kmeans.labels_
 
         # TODO decide how to plot multiple snips
         # think that x_ref[1,:] is just
@@ -509,10 +551,6 @@ class Manifolder():
         plt.figure(figsize=[15, 3])
 
         plt.plot(xref1[:lim], color='black', label='Timeseries')
-        # plt.plot(xs[:lim], linewidth=.5, label='$\psi_0$')
-        # plt.plot(ys[:lim], linewidth=.5, label='$\psi_1$')
-        # plt.plot(zs[:lim], linewidth=.5, label='$\psi_2$')
-
         plt.plot(xs[:lim], linewidth=.5, label='psi_0')
         plt.plot(ys[:lim], linewidth=.5, label='psi_1')
         plt.plot(zs[:lim], linewidth=.5, label='psi_2')
