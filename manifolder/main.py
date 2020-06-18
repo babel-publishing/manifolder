@@ -12,15 +12,15 @@ from manifolder import helper as mh
 
 import functools
 
-import tslearn
-from tslearn.metrics import dtw
-from tslearn.metrics import cdist_dtw
+#import tslearn
+#from tslearn.metrics import dtw
+#from tslearn.metrics import cdist_dtw
 
 # import sklearn_extra
 # from sklearn_extra.cluster import KMedoids
 
-from pyclustering.utils import calculate_distance_matrix
-from pyclustering.cluster.kmedoids import kmedoids
+#from pyclustering.utils import calculate_distance_matrix
+#from pyclustering.cluster.kmedoids import kmedoids
 
 import random
 from random import sample
@@ -451,7 +451,7 @@ class Manifolder():
         # A. Singer and R. R. Coifman, "Spectral ICA", ACHA 2007.
         #
 
-    def _clustering(self, kmns=True, distance_measure=None, nrep=1):
+    def _clustering(self, numClusters=7, kmns=True, distance_measure=None, nrep=1):
 
         # Cluster embedding and generate figures and output files
         # ***************************************************************@
@@ -459,7 +459,6 @@ class Manifolder():
         import matplotlib.pyplot as plt
 
         # Configuration
-        numClusters = 7  # NOTE, this was previously 14 (too many!)
         intrinsicDim = self.Dim  # can be varied slightly but shouldn't be much larger than Dim
 
         ## Clusters
@@ -519,6 +518,7 @@ class Manifolder():
                 xref1 = x[::self.stepSize]  # downsample, to match the data steps
             else:
                 x = self.z[snip][0, :]
+                x = x[0:x.shape[0]-self.H]
                 x = x[::self.stepSize]
                 xref1 = np.append(xref1, x)
 
