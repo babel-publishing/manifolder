@@ -1,0 +1,4 @@
+# Github uses the open source project 'linguist' to detect which languages a project uses.
+# The following line tells linguist to classify .ipynb files as python, which it refuses to believe
+# by default (lol). For more details, see: https://github.com/github/linguist#overrides
+notebooks/*.ipynb linguist-language=Python
