@@ -33,7 +33,9 @@ Aside from these details, our goal is not to push any particular agenda, and we 
 
 We intend to figure out the details as we go.
 
-If you would like to collaborate on this project, submit an issue, submit a pull request, or send an email to notarealdeveloper@gmail.com.
+If you would like to collaborate on this project, post an issue or submit a pull request.
+
+If you would like to be added to the organization, send an email to notarealdeveloper@gmail.com or any other member.
 
 ---
 
