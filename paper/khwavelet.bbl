@@ -1,0 +1,307 @@
+\begin{thebibliography}{35}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\expandafter\ifx\csname bibnamefont\endcsname\relax
+  \def\bibnamefont#1{#1}\fi
+\expandafter\ifx\csname bibfnamefont\endcsname\relax
+  \def\bibfnamefont#1{#1}\fi
+\expandafter\ifx\csname citenamefont\endcsname\relax
+  \def\citenamefont#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem[{\citenamefont{Wan et~al.}(2012)\citenamefont{Wan, Matthaeus,
+  Karimabadi, Roytershteyn, Shay, Wu, Daughton, Loring, and
+  Chapman}}]{wan:2012}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Wan}},
+  \bibinfo{author}{\bibfnamefont{W.~H.} \bibnamefont{Matthaeus}},
+  \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Karimabadi}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Roytershteyn}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Shay}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Wu}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Daughton}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Loring}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{S.~C.} \bibnamefont{Chapman}},
+  \bibinfo{journal}{Phys. Rev. Lett.} \textbf{\bibinfo{volume}{109}},
+  \bibinfo{pages}{195001} (\bibinfo{year}{2012}),
+  \urlprefix\url{https://link.aps.org/doi/10.1103/PhysRevLett.109.195001}.
+
+\bibitem[{\citenamefont{Karimabadi et~al.}(2013)\citenamefont{Karimabadi,
+  Roytershteyn, Wan, Matthaeus, Daughton, Wu, Shay, Loring, Borovsky, Leonardis
+  et~al.}}]{karimabadi:2013}
+\bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Karimabadi}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Roytershteyn}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Wan}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Matthaeus}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Daughton}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Wu}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Shay}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Loring}},
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Borovsky}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Leonardis}},
+  \bibnamefont{et~al.}, \bibinfo{journal}{Physics of Plasmas}
+  \textbf{\bibinfo{volume}{20}}, \bibinfo{pages}{012303}
+  (\bibinfo{year}{2013}).
+
+\bibitem[{\citenamefont{Grossmann and Morlet}(1984)}]{grossmann:1984}
+\bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Grossmann}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Morlet}},
+  \bibinfo{journal}{SIAM journal on mathematical analysis}
+  \textbf{\bibinfo{volume}{15}}, \bibinfo{pages}{723} (\bibinfo{year}{1984}).
+
+\bibitem[{\citenamefont{Farge}(1992)}]{farge:1992}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}},
+  \bibinfo{journal}{Annual review of fluid mechanics}
+  \textbf{\bibinfo{volume}{24}}, \bibinfo{pages}{395} (\bibinfo{year}{1992}).
+
+\bibitem[{\citenamefont{Schneider and Vasilyev}(2010)}]{schneider:2010}
+\bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{O.}~\bibnamefont{Vasilyev}},
+  \bibinfo{journal}{Annual Review Fluid Mechanics} pp.
+  \bibinfo{pages}{473--503} (\bibinfo{year}{2010}).
+
+\bibitem[{\citenamefont{Dudok~de Wit and Krasnosel’Skikh}(1995)}]{dudok:1995}
+\bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Dudok~de Wit}}
+  \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Krasnosel’Skikh}},
+  \bibinfo{journal}{Physics of Plasmas} \textbf{\bibinfo{volume}{2}},
+  \bibinfo{pages}{4307} (\bibinfo{year}{1995}).
+
+\bibitem[{\citenamefont{V{\"o}r{\"o}s et~al.}(2004)\citenamefont{V{\"o}r{\"o}s,
+  Baumjohann, Nakamura, Runov, Volwerk, Zhang, and Balogh}}]{voros:2004}
+\bibinfo{author}{\bibfnamefont{Z.}~\bibnamefont{V{\"o}r{\"o}s}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Baumjohann}},
+  \bibinfo{author}{\bibfnamefont{R.}~\bibnamefont{Nakamura}},
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Runov}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Volwerk}},
+  \bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Zhang}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Balogh}},
+  \bibinfo{journal}{Physics of Plasmas} \textbf{\bibinfo{volume}{11}},
+  \bibinfo{pages}{1333} (\bibinfo{year}{2004}).
+
+\bibitem[{\citenamefont{Van~Milligen et~al.}(1995)\citenamefont{Van~Milligen,
+  Hidalgo, and Sanchez}}]{vanmilligen:1995}
+\bibinfo{author}{\bibfnamefont{B.~P.} \bibnamefont{Van~Milligen}},
+  \bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Hidalgo}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Sanchez}},
+  \bibinfo{journal}{Physical review letters} \textbf{\bibinfo{volume}{74}},
+  \bibinfo{pages}{395} (\bibinfo{year}{1995}).
+
+\bibitem[{\citenamefont{Nguyen~van yen et~al.}(2010)\citenamefont{Nguyen~van
+  yen, del Castilo-Negrete, Schneider, Farge, and Chen}}]{nguyen:2010}
+\bibinfo{author}{\bibfnamefont{R.}~\bibnamefont{Nguyen~van yen}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{del Castilo-Negrete}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Chen}},
+  \bibinfo{journal}{Journal of Computational Physics}
+  \textbf{\bibinfo{volume}{229}}, \bibinfo{pages}{2821–2839}
+  (\bibinfo{year}{2010}).
+
+\bibitem[{\citenamefont{Nguyen~van yen et~al.}(2011)\citenamefont{Nguyen~van
+  yen, Sonnendr\"ucker, Schneider, and Farge}}]{NSSF11}
+\bibinfo{author}{\bibfnamefont{R.}~\bibnamefont{Nguyen~van yen}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Sonnendr\"ucker}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}},
+  \bibinfo{journal}{ESAIM: Proceedings} \textbf{\bibinfo{volume}{32}},
+  \bibinfo{pages}{134} (\bibinfo{year}{2011}).
+
+\bibitem[{\citenamefont{Nguyen~van yen et~al.}(2012)\citenamefont{Nguyen~van
+  yen, Fedorczak, Brochard, Bonhomme, Schneider, Farge, and
+  Monier-Garbet}}]{NFBBSFM12}
+\bibinfo{author}{\bibfnamefont{R.}~\bibnamefont{Nguyen~van yen}},
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Fedorczak}},
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Brochard}},
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Bonhomme}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Monier-Garbet}},
+  \bibinfo{journal}{Nuclear Fusion} \textbf{\bibinfo{volume}{52}},
+  \bibinfo{pages}{013005} (\bibinfo{year}{2012}).
+
+\bibitem[{\citenamefont{Farge and Schneider}(2015)}]{farge:2015}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{journal}{Journal of Plasma Physics} \textbf{\bibinfo{volume}{81}},
+  \bibinfo{pages}{435810602} (\bibinfo{year}{2015}).
+
+\bibitem[{\citenamefont{Sturrock}(1957)}]{sturrock:1957}
+\bibinfo{author}{\bibfnamefont{P.~A.} \bibnamefont{Sturrock}},
+  \bibinfo{journal}{Proc. R. Soc. Lond. A} \textbf{\bibinfo{volume}{242}},
+  \bibinfo{pages}{277} (\bibinfo{year}{1957}).
+
+\bibitem[{\citenamefont{Galeev et~al.}(1965)\citenamefont{Galeev, Karpman, and
+  Sagdeev}}]{galeev:1965}
+\bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Galeev}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Karpman}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{R.}~\bibnamefont{Sagdeev}},
+  \bibinfo{journal}{Nuclear Fusion} \textbf{\bibinfo{volume}{5}},
+  \bibinfo{pages}{20} (\bibinfo{year}{1965}).
+
+\bibitem[{\citenamefont{Kennel and Engelmann}(1966)}]{kennel:1966}
+\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Kennel}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Engelmann}},
+  \bibinfo{journal}{The Physics of Fluids} \textbf{\bibinfo{volume}{9}},
+  \bibinfo{pages}{2377} (\bibinfo{year}{1966}).
+
+\bibitem[{\citenamefont{Galtier et~al.}(2000)\citenamefont{Galtier, Nazarenko,
+  Newell, and Pouquet}}]{galtier:2000}
+\bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Galtier}},
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Nazarenko}},
+  \bibinfo{author}{\bibfnamefont{A.~C.} \bibnamefont{Newell}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Pouquet}},
+  \bibinfo{journal}{Journal of Plasma Physics} \textbf{\bibinfo{volume}{63}},
+  \bibinfo{pages}{447} (\bibinfo{year}{2000}).
+
+\bibitem[{\citenamefont{Manneville}(1995)}]{manneville:1995}
+\bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Manneville}}, in
+  \emph{\bibinfo{booktitle}{Chaos—The Interplay Between Stochastic and
+  Deterministic Behaviour}} (\bibinfo{publisher}{Springer},
+  \bibinfo{year}{1995}), pp. \bibinfo{pages}{257--272}.
+
+\bibitem[{\citenamefont{Kolmogorov}(1941)}]{kolmogorov:1941}
+\bibinfo{author}{\bibfnamefont{A.~N.} \bibnamefont{Kolmogorov}}, in
+  \emph{\bibinfo{booktitle}{Dokl. Akad. Nauk SSSR}} (\bibinfo{year}{1941}),
+  vol.~\bibinfo{volume}{30}, pp. \bibinfo{pages}{299--303}.
+
+\bibitem[{\citenamefont{Farge et~al.}(2001)\citenamefont{Farge, Pellegrino, and
+  Schneider}}]{farge:2001}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}},
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Pellegrino}},
+  \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{journal}{Physical Review Letters} \textbf{\bibinfo{volume}{87}},
+  \bibinfo{pages}{054501} (\bibinfo{year}{2001}).
+
+\bibitem[{\citenamefont{Politano et~al.}(1995)\citenamefont{Politano, Pouquet,
+  and Sulem}}]{politano:1995}
+\bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Politano}},
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Pouquet}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Sulem}},
+  \bibinfo{journal}{Physics of Plasmas} \textbf{\bibinfo{volume}{2}},
+  \bibinfo{pages}{2931} (\bibinfo{year}{1995}).
+
+\bibitem[{\citenamefont{TenBarge and Howes}(2013)}]{tenbarge:2013}
+\bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{TenBarge}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Howes}},
+  \bibinfo{journal}{The Astrophysical Journal Letters}
+  \textbf{\bibinfo{volume}{771}}, \bibinfo{pages}{L27} (\bibinfo{year}{2013}).
+
+\bibitem[{\citenamefont{Zhdankin et~al.}(2013)\citenamefont{Zhdankin, Uzdensky,
+  Perez, and Boldyrev}}]{zhdankin:2013}
+\bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Zhdankin}},
+  \bibinfo{author}{\bibfnamefont{D.~A.} \bibnamefont{Uzdensky}},
+  \bibinfo{author}{\bibfnamefont{J.~C.} \bibnamefont{Perez}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Boldyrev}},
+  \bibinfo{journal}{The Astrophysical Journal} \textbf{\bibinfo{volume}{771}},
+  \bibinfo{pages}{124} (\bibinfo{year}{2013}).
+
+\bibitem[{\citenamefont{Mallat}(1989)}]{mallat:1989}
+\bibinfo{author}{\bibfnamefont{S.~G.} \bibnamefont{Mallat}},
+  \bibinfo{journal}{IEEE transactions on pattern analysis and machine
+  intelligence} \textbf{\bibinfo{volume}{11}}, \bibinfo{pages}{674}
+  (\bibinfo{year}{1989}).
+
+\bibitem[{\citenamefont{Daubechies}(1993)}]{daubechies:1993}
+\bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Daubechies}},
+  \bibinfo{journal}{SIAM Journal on Mathematical Analysis}
+  \textbf{\bibinfo{volume}{24}}, \bibinfo{pages}{499} (\bibinfo{year}{1993}).
+
+\bibitem[{\citenamefont{Jawerth and Sweldens}(1994)}]{jawerth:1994}
+\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Jawerth}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Sweldens}},
+  \bibinfo{journal}{SIAM review} \textbf{\bibinfo{volume}{36}},
+  \bibinfo{pages}{377} (\bibinfo{year}{1994}).
+
+\bibitem[{\citenamefont{Farge et~al.}(1999)\citenamefont{Farge, Schneider, and
+  Kevlahan}}]{farge:1999}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Kevlahan}},
+  \bibinfo{journal}{Physics of Fluids} \textbf{\bibinfo{volume}{11}},
+  \bibinfo{pages}{2187} (\bibinfo{year}{1999}).
+
+\bibitem[{\citenamefont{Schneider et~al.}(2006)\citenamefont{Schneider, Ziuber,
+  Farge, and Azzalini}}]{schneider:2006}
+\bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Ziuber}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Azzalini}},
+  \bibinfo{journal}{Journal of Turbulence} p. \bibinfo{pages}{N44}
+  (\bibinfo{year}{2006}).
+
+\bibitem[{\citenamefont{Donoho and Johnstone}(1994)}]{donoho:1994}
+\bibinfo{author}{\bibfnamefont{D.~L.} \bibnamefont{Donoho}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.~M.} \bibnamefont{Johnstone}},
+  \bibinfo{journal}{biometrika} \textbf{\bibinfo{volume}{81}},
+  \bibinfo{pages}{425} (\bibinfo{year}{1994}).
+
+\bibitem[{\citenamefont{Azzalini et~al.}(2005)\citenamefont{Azzalini, Farge,
+  and Schneider}}]{azzalini:2005}
+\bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Azzalini}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{journal}{Applied and Computational Harmonic Analysis}
+  \textbf{\bibinfo{volume}{18}}, \bibinfo{pages}{177} (\bibinfo{year}{2005}).
+
+\bibitem[{\citenamefont{Okamoto et~al.}(2007)\citenamefont{Okamoto, Yoshimatsu,
+  Schneider, Farge, and Kaneda}}]{okamoto:2007}
+\bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Okamoto}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Yoshimatsu}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Schneider}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Farge}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Kaneda}},
+  \bibinfo{journal}{Physics of Fluids} \textbf{\bibinfo{volume}{19}},
+  \bibinfo{pages}{115109} (\bibinfo{year}{2007}).
+
+\bibitem[{\citenamefont{Chang et~al.}(2000)\citenamefont{Chang, Yu, and
+  Vetterli}}]{chang:2000}
+\bibinfo{author}{\bibfnamefont{S.~G.} \bibnamefont{Chang}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Yu}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Vetterli}},
+  \bibinfo{journal}{IEEE transactions on image processing}
+  \textbf{\bibinfo{volume}{9}}, \bibinfo{pages}{1532} (\bibinfo{year}{2000}).
+
+\bibitem[{\citenamefont{Bowers et~al.}(2008)\citenamefont{Bowers, Albright,
+  Yin, Bergen, and Kwan}}]{bowers:2008}
+\bibinfo{author}{\bibfnamefont{K.~J.} \bibnamefont{Bowers}},
+  \bibinfo{author}{\bibfnamefont{B.~J.} \bibnamefont{Albright}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Yin}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Bergen}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{T.~J.~T.} \bibnamefont{Kwan}},
+  \bibinfo{journal}{Physics of Plasmas} \textbf{\bibinfo{volume}{15}},
+  \bibinfo{eid}{055703} (pages~\bibinfo{numpages}{7}) (\bibinfo{year}{2008}),
+  \urlprefix\url{http://link.aip.org/link/?PHP/15/055703/1}.
+
+\bibitem[{\citenamefont{Chacon and Stanier}(2016)}]{chacon:2016}
+\bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Chacon}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Stanier}},
+  \bibinfo{journal}{Journal of Computational Physics}
+  \textbf{\bibinfo{volume}{326}}, \bibinfo{pages}{763} (\bibinfo{year}{2016}).
+
+\bibitem[{\citenamefont{Karimabadi et~al.}(2014)\citenamefont{Karimabadi,
+  Roytershteyn, Vu, Omelchenko, Scudder, Daughton, Dimmock, Nykyri, Wan, Sibeck
+  et~al.}}]{karimabadi:2014}
+\bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Karimabadi}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Roytershteyn}},
+  \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Vu}},
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Omelchenko}},
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Scudder}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Daughton}},
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Dimmock}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Nykyri}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Wan}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Sibeck}},
+  \bibnamefont{et~al.}, \bibinfo{journal}{Physics of Plasmas}
+  \textbf{\bibinfo{volume}{21}}, \bibinfo{pages}{062308}
+  (\bibinfo{year}{2014}).
+
+\bibitem[{\citenamefont{Esirkepov}(2001)}]{esirkepov:2001}
+\bibinfo{author}{\bibfnamefont{T.~Z.} \bibnamefont{Esirkepov}},
+  \bibinfo{journal}{Computer Physics Communications}
+  \textbf{\bibinfo{volume}{135}}, \bibinfo{pages}{144} (\bibinfo{year}{2001}).
+
+\end{thebibliography}
