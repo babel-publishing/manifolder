@@ -40,12 +40,12 @@ Make sure you have a recent version of Python on your system, such as [Anaconda 
 Manifolder can be pip installed.  Open a terminal and run
 
 ```python
-$ pip install git+https://github.com/avlab/manifolder
+$ pip install git+https://github.com/babel-publishing/manifolder/code
 ```
 
 If needed, the software can be uninstalled with `pip uninstall manifolder`.
 
-To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/avlab/manifolder/blob/master/manifolder_notebook.ipynb), which calculates an underlynig 3-dimensional manifold from an 8-dimensional timeseries, for both synthetic and real-world (solar wind) data.
+To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/babel-publishing/manifolder/blob/master/manifolder_notebook.ipynb), which calculates an underlynig 3-dimensional manifold from an 8-dimensional timeseries, for both synthetic and real-world (solar wind) data.
 
 
 ### Porting Notes
@@ -145,19 +145,4 @@ https://help.github.com/en/github/creating-cloning-and-archiving-repositories/li
 [How to Contribute to Open Source | Open Source Guides](https://opensource.guide/how-to-contribute/) - has the "Anatomy of an open source project" section, on the crucial files, as well as the structure (Author, Owner, Maintainers, Contributors, Community Members)
 
 [FOSSmarks](http://fossmarks.org) is a good source for understanding TRADEMARKS in a free and open-source domain
-
-
-## github.io (web)
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/avlab/avlab.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
-
-
-
-
 
