@@ -2,8 +2,6 @@
 
 > (Dear Team: change this if it sucks! Just pushing it without worrying about editing too much.)
 
----
-
 ## Table of Contents
 * [What are we trying to do?](#what-are-we-trying-to-do)
 * [What's the paper about?](#whats-the-paper-about)
@@ -19,9 +17,9 @@
 
 This paper and the code underlying it are an experiment in scientific collaboration outside the ivory tower.
 
-Our aim is to explore what publication, peer review, and scientific collaboration might look like in a world where science has decoupled itself from academia.
+Our aim is to explore what peer review and publication might look like in a world where science has decoupled itself from academia.
 
-The goal is to explore a model of scientific publishing with the following core features.
+This project will serve as a test drive of a model scientific publishing with the following core features:
 
 1. Publication happens first. Before peer-review. Before the paper has been written. And before the work backing it has been finished.
 
@@ -37,7 +35,6 @@ If you would like to collaborate on this project, post an issue or submit a pull
 
 If you would like to be added to the organization, send an email to notarealdeveloper@gmail.com or any other member.
 
----
 
 ## What's the paper about?
 
@@ -53,7 +50,6 @@ If you would like to be added to the organization, send an email to notarealdeve
   * [This paper by Talmon and Coifman did an awesome job](background/intrinsic-modeling-of-stochastic-dynamical-systems-using-empirical-geometry.pdf)
   * We want to implement their algorithm in Python and use it on some space weather data.
 
----
 
 ## What's the code about?
 
