@@ -19,7 +19,7 @@ This paper and the code underlying it are an experiment in scientific collaborat
 
 Our aim is to explore what peer review and publication might look like in a world where science has decoupled itself from academia.
 
-This project will serve as a test drive of a model scientific publishing with the following core features:
+This project will serve as a test drive of a model of scientific publishing with the following core features:
 
 1. Publication happens first. Before peer-review. Before the paper has been written. And before the work backing it has been finished.
 
