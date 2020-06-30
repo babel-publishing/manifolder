@@ -40,7 +40,7 @@ Make sure you have a recent version of Python on your system, such as [Anaconda 
 Manifolder can be pip installed.  Open a terminal and run
 
 ```python
-$ pip install git+https://github.com/babel-publishing/manifolder/code
+$ pip install -e 'git+https://github.com/babel-publishing/manifolder/#egg=manifolder&subdirectory=code'
 ```
 
 If needed, the software can be uninstalled with `pip uninstall manifolder`.
