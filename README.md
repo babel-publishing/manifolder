@@ -59,3 +59,11 @@ The algorithm was originally described [by Talmon and Coifman] in the 2014 paper
 
 Our port is open-sourced under the MIT license.
 
+To install the python package, use the following command:
+```python
+$ pip install -e 'git+https://github.com/babel-publishing/manifolder/#egg=manifolder&subdirectory=code'
+```
+
+If needed, the pacake can be uninstalled with `pip uninstall manifolder`.
+
+To see a quick demo of the code, check out the [manifolder_notebook](https://github.com/babel-publishing/manifolder/blob/master/manifolder_notebook.ipynb), which calculates an underlying 3-dimensional manifold from an 8-dimensional timeseries, for both synthetic and real-world (solar wind) data.
