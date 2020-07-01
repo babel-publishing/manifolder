@@ -1,40 +1,46 @@
-__all__ = ()
+__all__ = (
+    'count_cluster_lengths',
+    'show_cluster_lengths',
+    'print_cluster_lengths',
+    'make_transition_matrix',
+    'make_matrix_markov',
+    'reorder_cluster',
+    'image_M',
+)
 
-from numpy import linalg as LA
+import math
+import collections
 
 import numpy as np
-
-np.set_printoptions(suppress=True, precision=4)
+from numpy import linalg as LA
 
 from scipy.sparse import linalg as LAs
+from scipy.stats import norm, kurtosis
+from scipy import stats
+from scipy.stats import skew
 
 import matplotlib.pyplot as plt
 
-from collections import OrderedDict
 
-import math
-
-
-# used by histograms_overlap
 def histogram_bins_centered(data, nbins):
-    """ helper function for numpy histograms, to generate bins that are centered, similar to the MATLAB hist
-        for python, nbins are specified by n+1 numbers, marking the boundaries of the bins
-        this allows for uneven spaced bins """
 
-    # np.ptp is "peak-to-peak," or range
-    # bin_width = np.ptp(data) / (nbins - 1)
+    """ helper function for numpy histograms, to generate bins that are
+        centered, similar to the MATLAB hist. for python, the bins are
+        specified by nbins + 1 numbers, marking the boundaries of the bins.
+        this allows for bins of different widths, ranging across the data.
+    """
 
-    # bins = np.linspace(np.min(data) - bin_width / 2, np.max(data) + bin_width / 2, nbins + 1)
+    # used by histograms_overlap
 
     bins = np.linspace(np.min(data), np.max(data), nbins + 1)
-
-    # bins now has nbins+1 values, and ranges across the data
 
     return bins
 
 
 def histogram_bins_all_snips(data, nbins):
-    """ helper function to find bin spacing across snippets, similar to histogram_bins_centered on one series """
+
+    """ helper function to find bin spacing across snippets,
+        similar to histogram_bins_centered on one series. """
 
     N = data[0].shape[0]
     n = len(data)
@@ -55,13 +61,6 @@ def histogram_bins_all_snips(data, nbins):
         # results in list of arrays
 
     return hist_bins
-
-
-def histogram_bins_centered_test():
-    """ simple test """
-    # bins = histogram_bins_centered(series, nbins=5)
-    # print(bins)
-    pass
 
 
 # svd_like_matlab used by histograms overlap
@@ -159,20 +158,6 @@ def svds_like_matlab(A,k=None):
     # print(V.shape)
 
     return U, S, V
-
-
-def svd_like_matlab_test():
-    """ test """
-    # MATLAB equivalent:
-    #  A = [[0 1 2];[3 4 5]]
-    #  [U, S, V] = svd(A)
-
-    A = np.array([[0, 1, 2], [3, 4, 5]])
-    print(A)
-    [U, S, V] = svd_like_matlab(A)
-    print('U\n' + str(U))
-    print('S\n' + str(S))
-    print('V\n' + str(V))
 
 
 # eig_like_matlab used by embeddings
@@ -349,11 +334,6 @@ def simplify_data(z_shape=(8, 87660)):
     return z_mod.T
 
 
-from scipy.stats import norm, kurtosis
-from scipy import stats
-from scipy.stats import skew
-
-
 def test_moms():
     """ look at numpy's calculation of higher order momets (through kurtosis), see
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skew.html#scipy.stats.skew
@@ -421,9 +401,6 @@ def get_log_spaced_bins(max_value=350.1):
     print(bin_boundaries)
 
 
-import collections
-
-
 def count_cluster_lengths(x):
     """ takes an array in, x, which contains a series of cluster labels,
         and returns the result in a dictionary
@@ -458,17 +435,12 @@ def count_cluster_lengths(x):
         cluster_lens[this_val].append(this_len)
         # print(str(this_val),str(this_len))
 
-        # print(d)
         i += this_len
 
     return cluster_lens
-    # for key in keys:
-    #     # also, sort the lists here
-    #     cluster_lens[key].sort()  # on the list, happens in place
-    #     print('key', key, 'value', cluster_lens[key], '\n')
 
 
-def print_cluster_lens(cluster_lens):
+def print_cluster_lengths(cluster_lens):
     """ prints out the dictionary object created, that stores cluster lengths
     """
     for key in cluster_lens.keys():
@@ -477,7 +449,7 @@ def print_cluster_lens(cluster_lens):
         print('key', key, 'value', cluster_lens[key], '\n')
 
 
-def show_cluster_lens(cluster_lens, sharey=True):
+def show_cluster_lengths(cluster_lens, sharey=True):
     """ plots the lengths of the clusters, as determined above
         sharey=False allows each subplot to have different y-axis limits
     """
@@ -507,15 +479,6 @@ def show_cluster_lens(cluster_lens, sharey=True):
     plt.suptitle('cluster length histograms')
     plt.xlabel('cluster lengths')
     plt.show()
-
-
-def test_count_cluster_lengths():
-    """ lol """
-    a = np.array([0, 0, 0, 5, 5, 0, 0, 1, 1, 4])
-
-    cluster_lens = count_cluster_lengths(a)
-
-    print_cluster_lens(cluster_lens)
 
 
 ###
@@ -548,19 +511,13 @@ def make_transition_matrix(states):
 def make_matrix_markov(A):
     """ takes a matrix, and normalizes so that each column sums to one
         (assumes matrix values are already positive!)"""
+
     # makes more sense to normalize so that the columns sum to one
     col_sum = np.sum(A, axis=0).reshape(1, -1)
-
-    # print(col_sum)
 
     A_markov = A / col_sum  # col_sum will broadcast
 
     return A_markov
-
-
-# A = np.random.randn(3,3)
-# print(A)
-# print(make_matrix_markov(A))
 
 
 def image_M(data, vmax=None):
