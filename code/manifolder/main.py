@@ -12,28 +12,16 @@ from manifolder import helper as mh
 
 import functools
 
-#import tslearn
-#from tslearn.metrics import dtw
-#from tslearn.metrics import cdist_dtw
-
-# import sklearn_extra
-# from sklearn_extra.cluster import KMedoids
-
-#from pyclustering.utils import calculate_distance_matrix
-#from pyclustering.cluster.kmedoids import kmedoids
-
 import random
 from random import sample
+
+import matplotlib.pyplot as plt
 
 print = functools.partial(print, flush=True)
 
 
-def test():
-    print('test function called')
+class Manifolder:
 
-
-# class LinearRegression(MultiOutputMixin, RegressorMixin, LinearModel):
-class Manifolder():
     """
     Implementation of Emperical Intrinsic Geometry (EIG) for time-series.
 
@@ -72,9 +60,7 @@ class Manifolder():
         self.H = H
         self.stepSize = step_size
         self.nbins = nbins
-
         self.distance_measure = distance_measure
-
         self.ncov = ncov
 
     def fit_transform(self, X):
@@ -88,7 +74,7 @@ class Manifolder():
 
         Returns
         -------
-        self : returns an instance of self.
+        self
         """
 
         ### IMPORTANT - sklearn, and Python / data science in general use the convention where
@@ -98,7 +84,6 @@ class Manifolder():
         ### manifolder takes the data in this semi-standard format, but internally uses the
         ### 'observations as columns' format from the original MATLAB
         ###
-        # print('fit was called, not yet implemented')
         self._load_data(X)
 
         self._histograms_overlap()
@@ -455,8 +440,6 @@ class Manifolder():
 
         # Cluster embedding and generate figures and output files
         # ***************************************************************@
-
-        import matplotlib.pyplot as plt
 
         # Configuration
         intrinsicDim = self.Dim  # can be varied slightly but shouldn't be much larger than Dim
