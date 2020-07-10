@@ -8,6 +8,7 @@ from matplotlib import cm
 """
 EXAMPLE CODE: Plot astro data
 
+    from manifolder.plotting import plot_clusters
     import pandas as pd
 
     df = pd.read_csv('manifolder/code/astro/astro_subset_clustering_k=7.csv')
