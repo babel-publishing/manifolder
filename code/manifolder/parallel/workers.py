@@ -6,6 +6,11 @@ from numpy.linalg import inv
 from numpy.linalg import pinv
 
 from manifolder import helper as mh
+from multiprocessing import Lock, shared_memory
+
+def parallel_init(l):
+    global lock #should be shared among worker processes
+    lock = l
 
 def dis(inv_c, subidx, dataref, data, M, j):
     tmp1 = inv_c[:, :, subidx[j]] @ dataref[j, :].T  # 40, in Python
@@ -17,38 +22,51 @@ def dis(inv_c, subidx, dataref, data, M, j):
     # this tiles the matrix ... repmat is like np.tile
     # Dis[:,j] = repmat[a2, M, 1] + b2 - 2*ab
     return (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
-
+    
 #shared memory version of dis, must have Python >= 3.8 to use
 def dis_shm(inv_c_shape, inv_c_type,
             subidx_shape, subidx_type,
             dataref_shape, dataref_type,
-            data_shape, data_type, M, j):
-    from multiprocessing import shared_memory
+            data_shape, data_type, 
+            dis_shape, dis_type, 
+            M, count, start):
     #connect to shared memory and create numpy array objects backed by it
     shm_inv_c = shared_memory.SharedMemory(name='inv_c')
     shm_subidx = shared_memory.SharedMemory(name='subidx')
     shm_dataref = shared_memory.SharedMemory(name='dataref')
     shm_data = shared_memory.SharedMemory(name='data')
+    shm_Dis = shared_memory.SharedMemory(name='dis')
     inv_c = np.ndarray(inv_c_shape, inv_c_type, buffer=shm_inv_c.buf)
     subidx = np.ndarray(subidx_shape, subidx_type, buffer=shm_subidx.buf)
     dataref = np.ndarray(dataref_shape, dataref_type, buffer=shm_dataref.buf)
     data = np.ndarray(data_shape, data_type, buffer=shm_data.buf)
+    Dis = np.ndarray(dis_shape, dis_type, buffer=shm_Dis.buf)
     #connected to shared memory, perform calculation as usual
-    tmp1 = inv_c[:, :, subidx[j]] @ dataref[j, :].T  # 40, in Python
+    for j in range(start, start + count):
+        tmp1 = inv_c[:, :, subidx[j]] @ dataref[j, :].T  # 40, in Python
 
-    a2 = np.dot(dataref[j, :], tmp1)  # a2 is a scalar
-    b2 = np.sum(data * (inv_c[:, :, subidx[j]] @ data.T).T, 1)
-    ab = data @ tmp1  # only @ works here
+        a2 = np.dot(dataref[j, :], tmp1)  # a2 is a scalar
+        b2 = np.sum(data * (inv_c[:, :, subidx[j]] @ data.T).T, 1)
+        ab = data @ tmp1  # only @ works here
 
-    # this tiles the matrix ... repmat is like np.tile
-    # Dis[:,j] = repmat[a2, M, 1] + b2 - 2*ab
-    ret = (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
+        # this tiles the matrix ... repmat is like np.tile
+        # Dis[:,j] = repmat[a2, M, 1] + b2 - 2*ab
+        ret = (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
+
+        lock.acquire()
+        Dis[:, j] = ret
+        lock.release()
+    del inv_c
+    del subidx
+    del dataref
+    del data
+    del Dis
     #close handles to shared memory
     shm_inv_c.close()
     shm_subidx.close()
     shm_dataref.close()
     shm_data.close()
-    return ret
+    shm_Dis.close()
 
 def covars(z_hist_arr, ncov, nbins, N, Dim, snip):
 
@@ -139,7 +157,6 @@ def histograms(self_z, H, stepSize, N, hist_bins, snip):
 
     # for dim=1:N
     for dim in range(N):  # loop run standard Python indexing, starting at dim = 0
-        print('.', end='')
         series = z[dim, :]  # grab a row of data
 
         # NOTE, MATLAB and python calculate histograms differently

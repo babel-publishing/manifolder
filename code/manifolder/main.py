@@ -11,7 +11,7 @@ from sklearn.cluster import KMeans
 from manifolder import helper as mh
 
 from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError
+from multiprocessing import Pool, TimeoutError, Lock
 
 import functools
 from functools import partial
@@ -115,7 +115,8 @@ class Manifolder():
 
         if parallel:
             if use_shared_pool:
-                pool = Pool()
+                l = Lock()
+                pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=100)
                 self._histograms_parallel(process_pool=pool)
                 self._covariances_parallel(process_pool=pool)
                 self._embedding_parallel(process_pool=pool)
@@ -237,7 +238,8 @@ class Manifolder():
         histfunc = partial(workers.histograms, self.z, self.H, self.stepSize, self.N, hist_bins)
         pool = process_pool
         if process_pool == None:
-            pool = Pool()
+            l = Lock()
+            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
         results = pool.map(histfunc, range(n), chunksize=5)
         if process_pool == None:
             pool.close()
@@ -371,7 +373,8 @@ class Manifolder():
         covfunc = partial(workers.covars, self.z_hist, self.ncov, self.nbins, self.N, self.Dim)
         pool = process_pool
         if process_pool == None:
-            pool = Pool()
+            l = Lock()
+            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
         results = pool.map(covfunc, range(n), chunksize=5)
         if process_pool == None:
             pool.close()
@@ -584,7 +587,8 @@ class Manifolder():
         start_time = time.time()
         pool = process_pool
         if process_pool == None:
-            pool = Pool()
+            l = Lock()
+            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
         if sys.version_info >= (3,8,0):
             print('Python version is >= 3.8, using shared memory')
             from multiprocessing import shared_memory
@@ -597,6 +601,9 @@ class Manifolder():
                                                      create=True, size=dataref.nbytes)
             shm_data = shared_memory.SharedMemory(name='data',
                                                   create=True, size=data.nbytes)
+            
+            shm_result = shared_memory.SharedMemory(name='dis', 
+                                                    create=True, size=Dis.nbytes)
             #copy arrays into shared memory
             inv_c_copy = np.ndarray(self.inv_c.shape, self.inv_c.dtype, buffer=shm_inv_c.buf)
             np.copyto(inv_c_copy, self.inv_c, casting='no')
@@ -608,17 +615,36 @@ class Manifolder():
             np.copyto(data_copy, data, casting='no')
 
             #use pool to run function in parallel
-            dis = partial(workers.dis_shm, inv_c_copy.shape, inv_c_copy.dtype,
+            func = partial(workers.dis_shm, inv_c_copy.shape, inv_c_copy.dtype,
                           subidx_copy.shape, subidx_copy.dtype,
                           dataref_copy.shape, dataref_copy.dtype,
-                          data_copy.shape, data_copy.dtype, M)
-
-            results = pool.map(dis, range(m), chunksize=m//os.cpu_count())
+                          data_copy.shape, data_copy.dtype, 
+                          Dis.shape, Dis.dtype, M)
+            
+            #build starmap iterable
+            arr = []
+            cpu_count = os.cpu_count()
+            step = m//cpu_count
+            start = 0
+            for i in range(cpu_count-1):
+                arr.append((step, start))
+                start = start + step
+            arr.append((m - start, start))
+            #run function in parallel
+            pool.starmap(func, arr)
+            
             if process_pool == None:
                 pool.close()
                 pool.join()
-            for j in range(m):
-                Dis[:, j] = results[j]
+            #copy results out of shared memory
+            Dis_copy = np.ndarray(Dis.shape, Dis.dtype, buffer=shm_result.buf)
+            np.copyto(Dis, Dis_copy, casting='no')
+            del inv_c_copy
+            del subidx_copy
+            del dataref_copy
+            del data_copy
+            del Dis_copy
+            
             #close and cleanup shared memory
             shm_inv_c.close()
             shm_inv_c.unlink()
@@ -628,6 +654,8 @@ class Manifolder():
             shm_dataref.unlink()
             shm_data.close()
             shm_data.unlink()
+            shm_result.close()
+            shm_result.unlink()
         else:
             # without shared memory, each worker process will use ~700MB of RAM.
             # with it, they will use ~100MB each
@@ -763,13 +791,14 @@ class Manifolder():
             
             for i1 in range(row):
                 combined.append(self.Psi[i1, :intrinsicDim])
-                
+            print(combined)
             if (distance_measure == None):
                 print('Euclidean distances used in clustering')
                 distmat = calculate_distance_matrix(combined)
             else:
                 print('DTW distances used in clustering')
-                distmat_raw = cdist_dtw(combined)
+                distmat_raw = cdist_dtw(combined) #to replace with R function
+                
                 rowdist, coldist = distmat.shape
                 distmat = []
                 for i1 in range(rowd):
@@ -778,7 +807,7 @@ class Manifolder():
             print('sampling initial medoids')
             sample_idx = random.sample(range(row), numClusters)
             initial_medoids = sample_idx
-                
+
             print('running k-medoids')
             kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
             kmeds.process()
