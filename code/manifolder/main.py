@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError, Lock
+#from manifolder.parallel import workers
+#from multiprocessing import Pool, TimeoutError, Lock
 
 import functools
 from functools import partial
@@ -824,10 +824,11 @@ class Manifolder():
         # think that x_ref[1,:] is just
         for snip in range(len(self.z)):
             if snip == 0:
-                x = self.z[snip][0, :]
+                x = self.z[snip][5, :]
+                x = x[0:x.shape[0]-self.H]
                 xref1 = x[::self.stepSize]  # downsample, to match the data steps
             else:
-                x = self.z[snip][0, :]
+                x = self.z[snip][5, :]
                 x = x[0:x.shape[0]-self.H]
                 x = x[::self.stepSize]
                 xref1 = np.append(xref1, x)
