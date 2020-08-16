@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-#from manifolder.parallel import workers
-#from multiprocessing import Pool, TimeoutError, Lock
+from manifolder.parallel import workers
+from multiprocessing import Pool, TimeoutError, Lock
 
 import functools
 from functools import partial
@@ -24,8 +24,8 @@ import os
 #from tslearn.metrics import dtw
 #from tslearn.metrics import cdist_dtw
 
-# import sklearn_extra
-# from sklearn_extra.cluster import KMedoids
+import sklearn_extra
+from sklearn_extra.cluster import KMedoids
 
 #from pyclustering.utils import calculate_distance_matrix
 #from pyclustering.cluster.kmedoids import kmedoids
@@ -153,6 +153,54 @@ class Manifolder():
 
         self.N = self.z[0].shape[0]  # will be 8, the number of features
 
+    def dtw_matrix(self):
+        import dtw
+        print(self.shape)
+        start_time = time.time()
+        all_snips = []
+        for snip in range(len(self.z)):
+            all_snips.append(self.z[snip])
+        
+        self.dtw_matrix = np.zeros((len(all_snips), len(all_snips)))
+        print(self.dtw_matrix.shape)
+        start_time = time.time()
+        for i in range(len(all_snips)):
+            for j in range(i):
+                dtw_result = dtw.dtw(all_snips[i], all_snips[j])#, window_type="sakoechiba", window)
+                self.dtw_matrix[i,j] = dtw_result.distance
+                self.dtw_matrix[j,i] = dtw_result.distance
+        elapsed_time = time.time() - start_time
+        print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print(self.dtw_matrix)
+        return self.dtw_matrix
+        
+    def dtw_clustering(self, num_clusters=7):
+        all_windows
+        kmedoids = KMedoids(n_clusters = num_clusters, metric=dtw_call, init="random").fit(self.z)
+        print("dtw cluster centers:")
+        print(kmedoids.cluster_centers_)
+        print("dtw cluster labels:")
+        print(kmedoids.labels_)
+        self.kmedoids = kmedoids
+        return kmedoids
+        
+    def dtw_call(x, y):
+        import dtw
+        #here is where you can change dtw params for KMedoids clustering
+        #you can also add in the downsampling here
+        dtw_result = dtw.dtw(x,y)#, window_type="sakoechiba", window)
+        return dtw_result.distance
+        
+    def downsample(x, skip):
+        if isinstance(x, list):
+            y = []
+            for i in range(0, len(x), skip):
+                y.append(x[i])
+            return y
+        #need to add version for numpy arrays
+        pass
+        
+    
     def _histograms_overlap(self):
 
         n = len(self.z)
