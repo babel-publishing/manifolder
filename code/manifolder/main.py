@@ -108,6 +108,8 @@ class Manifolder():
         ###
         # print('fit was called, not yet implemented')
         self._load_data(X)
+        
+        self.dtw_clustering()
 
         # If set to True, all parallel methods will share a single process pool.
         # This can decrease the overhead of creating/destroying processes
@@ -174,31 +176,58 @@ class Manifolder():
         print(self.dtw_matrix)
         return self.dtw_matrix
         
+    def downsample(self, x, skip):
+        if isinstance(x, list):
+            length = len(x)
+        elif isinstance(x, np.ndarray):
+            length = x.shape[0]
+        y = []
+        for i in range(0, length, skip):
+            y.append(x[i])
+        return y
+        
+    def dtw_call(self, x, y):
+        import dtw
+        #here is where you can change dtw params for KMedoids clustering
+        dtw_result = dtw.dtw(x,y, window_type="sakoechiba", window_args={"window_size":2})
+        return dtw_result.distance
+        
     def dtw_clustering(self, num_clusters=7):
-        all_windows
-        kmedoids = KMedoids(n_clusters = num_clusters, metric=dtw_call, init="random").fit(self.z)
+        all_windows = []
+        all_snippets = []
+        for snip in range(10):
+            z = self.z[snip]
+            #for dim in range(self.N):
+            series = z[1, :]  # z[dim, :] grab a row of data
+            all_snippets.append(series)
+            i_range = int(np.floor(z.shape[1] - self.H) / self.stepSize)
+            for i in range(i_range):
+                #you can add in the downsampling here
+                all_windows.append(self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], 2))
+        
+        func = self.dtw_call
+        print("dtw clustering on full snippets ... ", end="")
+        start_time = time.time()
+        kmedoids = KMedoids(n_clusters = num_clusters, metric=func, init="random").fit(all_snippets)
+        elapsed_time = time.time() - start_time
+        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         print("dtw cluster centers:")
         print(kmedoids.cluster_centers_)
         print("dtw cluster labels:")
         print(kmedoids.labels_)
-        self.kmedoids = kmedoids
+        self.kmedoids_snippets = kmedoids
+
+        print("dtw clustering on windows ... ", end="")
+        start_time = time.time()
+        kmedoids = KMedoids(n_clusters = num_clusters, metric=func, init="random").fit(all_windows)
+        elapsed_time = time.time() - start_time
+        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print("dtw cluster centers:")
+        print(kmedoids.cluster_centers_)
+        print("dtw cluster labels:")
+        print(kmedoids.labels_)
+        self.kmedoids_windows = kmedoids
         return kmedoids
-        
-    def dtw_call(x, y):
-        import dtw
-        #here is where you can change dtw params for KMedoids clustering
-        #you can also add in the downsampling here
-        dtw_result = dtw.dtw(x,y)#, window_type="sakoechiba", window)
-        return dtw_result.distance
-        
-    def downsample(x, skip):
-        if isinstance(x, list):
-            y = []
-            for i in range(0, len(x), skip):
-                y.append(x[i])
-            return y
-        #need to add version for numpy arrays
-        pass
         
     
     def _histograms_overlap(self):
