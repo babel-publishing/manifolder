@@ -9,9 +9,30 @@ from manifolder import helper as mh
 
 from multiprocessing import Lock, shared_memory
 
+import dtw
+
 def parallel_init(l):
     global lock #should be shared among worker processes
     lock = l
+
+#dtw parallelization is only supported on Python >= 3.8, due to the dependence on shared memory
+def dtw_shm(data_shape, data_type, result_shape, result_type, start, stop):
+    shm_data = shared_memory.SharedMemory(name='dtw_data')
+    shm_result = shared_memory.SharedMemory(name='dtw_result')
+    data = np.ndarray(data_shape, data_type, buffer=shm_data.buf)
+    result = np.ndarray(result_shape, result_type, buffer=shm_result.buf)
+    for i in range(start, stop):
+        for j in range(i):
+            dtw_result = dtw.dtw(data[i], data[j])#, window_type="sakoechiba", window_args={"window_size":2})
+            lock.acquire()
+            result[i,j] = dtw_result.distance
+            result[j,i] = dtw_result.distance
+            lock.release()
+    del data
+    del result
+    shm_data.close()
+    shm_result.close()
+    
 
 def dis(inv_c, subidx, dataref, data, M, j):
     tmp1 = inv_c[:, :, subidx[j]] @ dataref[j, :].T  # 40, in Python
@@ -23,7 +44,7 @@ def dis(inv_c, subidx, dataref, data, M, j):
     # this tiles the matrix ... repmat is like np.tile
     # Dis[:,j] = repmat[a2, M, 1] + b2 - 2*ab
     return (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
-    
+
 #shared memory version of dis, must have Python >= 3.8 to use
 def dis_shm(inv_c_shape, inv_c_type,
             subidx_shape, subidx_type,
