@@ -112,10 +112,6 @@ class Manifolder():
         # print('fit was called, not yet implemented')
         self._load_data(X)
 
-        # If set to True, all parallel methods will share a single process pool.
-        # This can decrease the overhead of creating/destroying processes
-        use_shared_pool = True
-
         if parallel:
             l = Lock()
             pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=1)
@@ -127,9 +123,12 @@ class Manifolder():
                 self._embedding_parallel(process_pool=pool)
             pool.close()
             pool.join()
+            if use_dtw:
+                return
         else:
-            if dtw:
+            if use_dtw:
                 self.dtw_matrix(self.get_windows(downsample_factor=2), process_pool=pool)
+                return 
             else:
                 self._histograms_overlap()
                 self._covariances()
@@ -938,34 +937,36 @@ class Manifolder():
             self.IDX = kmeans.labels_
         else:
             print('calculating distances')
-            row, col = self.Psi.shape
-            combined = []
             
-            for i1 in range(row):
-                combined.append(self.Psi[i1, :intrinsicDim])
-            print(combined)
             if (distance_measure == None):
                 print('Euclidean distances used in clustering')
+                row, col = self.Psi.shape
+                combined = []
+                for i1 in range(row):
+                    combined.append(self.Psi[i1, :intrinsicDim])
                 distmat = calculate_distance_matrix(combined)
             else:
+            #elif (distance_measure == 'dtw'):
                 print('DTW distances used in clustering')
                 distmat = self.dtw_distmat
             
             print('sampling initial medoids')
-            sample_idx = random.sample(range(row), numClusters)
+            sample_idx = random.sample(range(distmat.shape[0]), numClusters)
             initial_medoids = sample_idx
 
             print('running k-medoids')
             self.kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
             self.kmeds.process()
-            temp_idx = np.array(kmeds.get_clusters())          
+            temp_idx = np.array(self.kmeds.get_clusters())          
             final_idx = []
-            for i1 in range(row):
+            for i1 in range(distmat.shape[0]):
                 for j1 in range(numClusters):
                     if (i1 in temp_idx[j1]):
                         final_idx.append(j1)
             self.IDX = np.array(final_idx)
             print(self.IDX.shape)
+            if (distance_measure != None):
+                return
 
 
         # TODO decide how to plot multiple snips
