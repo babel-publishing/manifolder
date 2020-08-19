@@ -171,6 +171,18 @@ class Manifolder():
                 windows[snip*len(self.z)+i, :] = self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
         return windows
 
+    def downsample(self, x, skip):
+        if isinstance(x, list):
+            length = len(x)
+        elif isinstance(x, np.ndarray):
+            length = x.shape[0]
+        y = np.zeros(length//skip)
+        j=0
+        for i in range(0, length, skip):
+            y[j] = x[i]
+            j += 1
+        return y
+        
     def dtw_matrix(self, data):
         start_time = time.time()
         self.dtw_matrix = np.zeros((data.shape[0], data.shape[0]))
@@ -245,18 +257,6 @@ class Manifolder():
         print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         return self.dtw_distmat
 
-
-    def downsample(self, x, skip):
-        if isinstance(x, list):
-            length = len(x)
-        elif isinstance(x, np.ndarray):
-            length = x.shape[0]
-        y = np.zeros(length//skip)
-        j=0
-        for i in range(0, length, skip):
-            y[j] = x[i]
-            j += 1
-        return y
 
     def dtw_call(self, x, y):
         #here is where you can change dtw params for KMedoids clustering
