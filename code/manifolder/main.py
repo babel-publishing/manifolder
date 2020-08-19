@@ -235,7 +235,7 @@ class Manifolder():
         #copy results out of shared memory
         np.copyto(self.dtw_distmat, result, casting='no')
         del data_copy
-        del Dis_copy
+        del result
 
         #close and cleanup shared memory
         shm_data.close()
@@ -956,8 +956,8 @@ class Manifolder():
             initial_medoids = sample_idx
 
             print('running k-medoids')
-            kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
-            kmeds.process()
+            self.kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
+            self.kmeds.process()
             temp_idx = np.array(kmeds.get_clusters())          
             final_idx = []
             for i1 in range(row):
@@ -965,6 +965,7 @@ class Manifolder():
                     if (i1 in temp_idx[j1]):
                         final_idx.append(j1)
             self.IDX = np.array(final_idx)
+            print(self.IDX.shape)
 
 
         # TODO decide how to plot multiple snips
