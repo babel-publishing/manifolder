@@ -88,7 +88,7 @@ class Manifolder():
 
         self.ncov = ncov
 
-    def fit_transform(self, X, parallel=False, use_dtw=False):
+    def fit_transform(self, X, parallel=False, use_dtw=False, dtw_downsample_factor=1, dtw_stack=False, dtw_stack_dims=None):
         """
         Fit (find the underlying manifold).
 
@@ -115,10 +115,11 @@ class Manifolder():
         if parallel:
             l = Lock()
             pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=1)
+            self._histograms_parallel(process_pool=pool)
             if use_dtw:
-                self.dtw_matrix_parallel(self.get_windows(downsample_factor=2), process_pool=pool)
+                self.dtw_matrix_parallel(self.get_snippets(downsample_factor=dtw_downsample_factor, 
+                    stack=dtw_stack, stack_dimensions=dtw_stack_dims), process_pool=pool)
             else:
-                self._histograms_parallel(process_pool=pool)
                 self._covariances_parallel(process_pool=pool)
                 self._embedding_parallel(process_pool=pool)
             pool.close()
@@ -126,11 +127,12 @@ class Manifolder():
             if use_dtw:
                 return
         else:
+            self._histograms_overlap()
             if use_dtw:
-                self.dtw_matrix(self.get_windows(downsample_factor=2), process_pool=pool)
-                return 
+                self.dtw_matrix(self.get_snippets(downsample_factor=dtw_downsample_factor, 
+                    stack=dtw_stack, stack_dimensions=dtw_stack_dims))
+                return
             else:
-                self._histograms_overlap()
                 self._covariances()
                 self._embedding()
 
@@ -166,10 +168,43 @@ class Manifolder():
             #currently only using one dimension, can add dimensions through stacking
             #for dim in range(self.N):
             #    series = z[dim, :] grab a row of data
-            series = z[1, :]
+            series = z[0, :]
             for i in range(i_range):
                 windows[snip*len(self.z)+i, :] = self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
         return windows
+    
+    
+    #returns a 2d numpy array of all snippets. If stack is left false, only the first 
+    # dimension of the data will be used. If true, it will stack the dimensions
+    # specified in the iterable stack_dimensions, or all dimensions if stack_dimensions
+    # is left as None, by interleaving the data points from each dimension
+    def get_snippets(self, downsample_factor=1, stack=False, stack_dimensions=None):
+        data_len = self.z[0].shape[1]
+        if not stack:
+            num_dims = 1
+            stack_dimensions = (0,)
+        if stack_dimensions == None:
+            num_dims = self.z[0].shape[0]
+            stack_dimensions = range(num_dims)
+        else:
+            num_dims = len(stack_dimensions)
+        all_snippets = np.zeros((len(self.z), (data_len // downsample_factor) * num_dims))
+        if stack:
+            print("stacking " + str(num_dims) + " dimensions")
+            for snip in range(len(self.z)):
+                z = self.z[snip]
+                dims = np.zeros((num_dims, data_len // downsample_factor))
+                for d in range(num_dims):
+                    dims[d,:] = self.downsample(z[d,:], downsample_factor)[:]
+                all_snippets[snip,:] = self.stack(dims)[:]
+            print("done stacking")
+        else:
+            for snip in range(len(self.z)):
+                z = self.z[snip]
+                all_snippets[snip,:] = self.downsample(z[0, :], downsample_factor)
+        print(all_snippets.shape)
+        return all_snippets
+
 
     def downsample(self, x, skip):
         if isinstance(x, list):
@@ -182,7 +217,12 @@ class Manifolder():
             y[j] = x[i]
             j += 1
         return y
-        
+
+    def stack(self, dims):
+        #transposing results in the data points from each dimension being interwoven.
+        # to connect each dimension end to end, simply remove the call to np.transpose
+        return np.transpose(dims).flatten()
+
     def dtw_matrix(self, data):
         start_time = time.time()
         self.dtw_matrix = np.zeros((data.shape[0], data.shape[0]))
