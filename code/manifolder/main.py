@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError, Lock
+#from manifolder.parallel import workers
+#from multiprocessing import Pool, TimeoutError, Lock
 
 import functools
 from functools import partial
