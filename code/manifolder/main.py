@@ -11,7 +11,7 @@ from sklearn.cluster import KMeans
 from manifolder import helper as mh
 
 from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError, Lock
+from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
 
 import functools
 from functools import partial
@@ -172,8 +172,8 @@ class Manifolder():
             for i in range(i_range):
                 windows[snip*len(self.z)+i, :] = self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
         return windows
-    
-    
+
+
     #returns a 2d numpy array of all snippets. If stack is left false, only the first 
     # dimension of the data will be used. If true, it will stack the dimensions
     # specified in the iterable stack_dimensions, or all dimensions if stack_dimensions
@@ -251,11 +251,16 @@ class Manifolder():
             l = Lock()
             pool = Pool(initializer=workers.parallel_init, initargs=(l,))
         
+        #process_list = []
+        #m = Manager()
+        #lock = m.Lock()
         self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
         
         print('Python version is >= 3.8, using shared memory')
         from multiprocessing import shared_memory
         #create shared memory for numpy arrays
+        #print(data.nbytes)
+        #print(self.dtw_distmat.nbytes)
         shm_data = shared_memory.SharedMemory(name='dtw_data',
                                               create=True, size=data.nbytes)
         shm_result = shared_memory.SharedMemory(name='dtw_result', 
@@ -278,8 +283,16 @@ class Manifolder():
             arr.append((arr[-1][1], int(math.sqrt(each*i))))
         arr.append((arr[-1][1], n))
         #run function in parallel
+        #for args in arr:
+        #    p = Process(target=func, args=args)
+        #    process_list.append(p)
+        #    print("starting process from ", args[0], " to ", args[1])
+        #    p.start()
+        #for p in process_list:
+        #    print("joining process")
+        #    p.join()
         pool.starmap(func, arr)
-
+        print("done processing dtw")
         if process_pool == None:
             pool.close()
             pool.join()
