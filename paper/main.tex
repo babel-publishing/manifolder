@@ -18,6 +18,7 @@
 \DeclareMathOperator{\Trace}{Trace}
 
 \newcommand{\vrr}[1]{{\color{blue} #1}}
+\newcommand{\ac}[1]{{\color{red} #1}}
 
 \begin{document}
 
@@ -70,6 +71,27 @@ Here are alex's ideas on this:
 
 I also think this does suggest a potential change to the algorithm.   We are looking for a motif of sorts (though there is variability in that motif).  So rather than doing kmeans clustering on all segments, we could find points in space that correspond to the motif (using the fact that we have supervision) and then build a ball around those points in the embedding space.  Then if new points fall into those balls, they are also a motif."
 \label{sec:ours}
+
+\subsection{Empirical Intrinsic Geometry Embedding}
+We apply the dynamical systems diffusion map technique developed in \cite{} to embed small windows from all of the snippets into a single, low dimensional Euclidean space.    We describe the embedding algorithm here for ease of reading, see \cite{} for a full description.
+
+Given $M$ $D$-dimensional time series snippets $\{x_i(t)\}_{i=1}^M$, we construct windows of size $H$ across all snippets $\begin{bmatrix} x_i(t_j-H+1), & ..., &x_i(t_j)   \end{bmatrix}_{j=1}^{N_i}$ where $N_i$ is the number of windows available in the $i^{th}$ snippet.  This creates a data cube of size $N_i \times H\times D$.  We concatenate all of these data cubes along the $1^{st}$ dimension to create a data cube $X$ of size $N\times H\times D$, where $N=\sum_{i=1}^M N_i$.  
+
+$X$ is transformed via histograms along each of the $D$ dimensions, binning the $H$ points from each window into $k$ equally space bins ranging from the minimum value to the maximum value across all data in that dimension.  This results in a matrix $\widetilde{X}$ of $D$ histograms per data point, making the matrix of size $N\times kD$.  
+
+\ac{Add description of covariance matrices}
+
+\ac{Add description of Mahalanobis distance and kernel, including measuring to reference points}
+
+Finally, we take $d$ left singular vectors $\Phi(x_i) = \begin{bmatrix}\lambda_j\phi_{j}(x_i)\end{bmatrix}_{j=1}^d$ of the matrix $A$ to characterize the embedding of the data points.  A benefit of these vectors is that the diffusion distance between $x_{i_1}$ and $x_{i_2}$ is characterized by the Euclidean distance $\|\Phi(x_{i_1}) - \Phi(x_{i_2})\|_2$.  
+
+
+\subsection{Snippet Level Classification}
+\ac{Add description of training/testing split at snippet level}
+
+\ac{Add description of nearest neighbor classification of windows based off localized features.  Mention Keogg new paper that snippet level labels alone is insufficient}
+
+\ac{Add description of thresholding to determine snippet level classification}
 
 
 \section{Data Description}
