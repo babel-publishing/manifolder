@@ -199,7 +199,7 @@ def eigs_like_matlab(A, k=None):
         k = A.shape[0]
 
     # this is how eig is usually called in python
-    w, v = LAs.eigsh(A, k, which = 'LM')
+    w, v = LAs.eigsh(A, k, which = 'LM', ncv = min(A.shape[0], max(5*k + 1, 20)))
 
     idx = [i[0] for i in sorted(enumerate(w), reverse=True, key=lambda x:x[1])]
 
