@@ -10,9 +10,6 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-#from manifolder.parallel import workers
-#from multiprocessing import Pool, TimeoutError, Lock
-
 import functools
 from functools import partial
 
@@ -114,6 +111,8 @@ class Manifolder():
         use_shared_pool = True
 
         if parallel:
+            from manifolder.parallel import workers
+            from multiprocessing import Pool, Lock
             if use_shared_pool:
                 l = Lock()
                 pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=100)
