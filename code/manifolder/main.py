@@ -88,7 +88,7 @@ class Manifolder():
 
         self.ncov = ncov
 
-    def fit_transform(self, X, parallel=False, use_dtw=False, dtw_downsample_factor=1, dtw_stack=False, dtw_stack_dims=None):
+    def fit_transform(self, X, parallel=False, dtw=None, dtw_downsample_factor=1, dtw_dims=None):
         """
         Fit (find the underlying manifold).
 
@@ -116,22 +116,27 @@ class Manifolder():
             l = Lock()
             pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=1)
             self._histograms_parallel(process_pool=pool)
-            if use_dtw:
+            if dtw == "stack":
                 self.dtw_matrix_parallel(self.get_snippets(downsample_factor=dtw_downsample_factor, 
-                    stack=dtw_stack, stack_dimensions=dtw_stack_dims), process_pool=pool)
+                    stack=True, stack_dimensions=dtw_dims), process_pool=pool)
+            elif dtw == "sum":
+                pass
+                #self.dtw_matrix_multidim_sum_parallel(self.zs, dtw_dims)
             else:
                 self._covariances_parallel(process_pool=pool)
                 self._embedding_parallel(process_pool=pool)
             pool.close()
             pool.join()
-            if use_dtw:
+            if dtw != None:
                 return
         else:
             self._histograms_overlap()
-            if use_dtw:
+            if dtw == "stack":
                 self.dtw_matrix(self.get_snippets(downsample_factor=dtw_downsample_factor, 
-                    stack=dtw_stack, stack_dimensions=dtw_stack_dims))
+                    stack=dtw_stack, stack_dimensions=dtw_dims))
                 return
+            elif dtw == "sum":
+                self.dtw_matrix_multidim_sum(self.z, dtw_dims)
             else:
                 self._covariances()
                 self._embedding()
@@ -310,6 +315,26 @@ class Manifolder():
         print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         return self.dtw_distmat
 
+    def dtw_matrix_multidim_sum(self, data, dims=None):
+        if dims == None:
+            dims = tuple(range(data[0].shape[0]))
+            print(dims)
+        start_time = time.time()
+        self.dtw_matrix = np.zeros((len(data), len(data)))
+        for dim in dims:
+            single_dim = self.get_snippets(stack=True, stack_dimensions=(dim,))
+            print(self.dtw_matrix.shape)
+            start_time = time.time()
+            for i in range(single_dim.shape[0]):
+                for j in range(i):
+                    dtw_result = dtw.dtw(single_dim[i,:], single_dim[j,:])#, window_type="sakoechiba", window_args={"window_size":2})
+                    self.dtw_matrix[i,j] += dtw_result.distance
+                    self.dtw_matrix[j,i] += dtw_result.distance
+        elapsed_time = time.time() - start_time
+        print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print(self.dtw_matrix)
+        return self.dtw_matrix
+        
 
     def dtw_call(self, x, y):
         #here is where you can change dtw params for KMedoids clustering
