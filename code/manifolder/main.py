@@ -10,22 +10,28 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
+from manifolder.parallel import workers
+from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
+
 import functools
 from functools import partial
 
 import time
 import sys
 import os
+import math
 
 #import tslearn
 #from tslearn.metrics import dtw
 #from tslearn.metrics import cdist_dtw
 
-# import sklearn_extra
-# from sklearn_extra.cluster import KMedoids
+import sklearn_extra
+from sklearn_extra.cluster import KMedoids
+
+import dtw
 
 #from pyclustering.utils import calculate_distance_matrix
-#from pyclustering.cluster.kmedoids import kmedoids
+from pyclustering.cluster.kmedoids import kmedoids
 
 import random
 from random import sample
@@ -82,7 +88,7 @@ class Manifolder():
 
         self.ncov = ncov
 
-    def fit_transform(self, X, parallel=False):
+    def fit_transform(self, X, parallel=False, dtw=None, dtw_downsample_factor=1, dtw_dims=None):
         """
         Fit (find the underlying manifold).
 
@@ -106,29 +112,38 @@ class Manifolder():
         # print('fit was called, not yet implemented')
         self._load_data(X)
 
-        # If set to True, all parallel methods will share a single process pool.
-        # This can decrease the overhead of creating/destroying processes
-        use_shared_pool = True
-
         if parallel:
-            from manifolder.parallel import workers
-            from multiprocessing import Pool, Lock
-            if use_shared_pool:
-                l = Lock()
-                pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=100)
-                self._histograms_parallel(process_pool=pool)
+            l = Lock()
+            pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=1)
+            self._histograms_parallel(process_pool=pool)
+            if dtw == "stack":
+                self.dtw_matrix_parallel(self.get_snippets(downsample_factor=dtw_downsample_factor, 
+                    stack=True, stack_dimensions=dtw_dims), process_pool=pool)
+            elif dtw == "sum":
+                pass
+                #self.dtw_matrix_multidim_sum_parallel(self.zs, dtw_dims)
+            else:
                 self._covariances_parallel(process_pool=pool)
                 self._embedding_parallel(process_pool=pool)
-                pool.close()
-                pool.join()
-            else:
-                self._histograms_parallel()
-                self._covariances_parallel()
-                self._embedding_parallel()
+            pool.close()
+            pool.join()
+            if dtw != None:
+                return
         else:
             self._histograms_overlap()
-            self._covariances()
-            self._embedding()
+            if dtw == "stack":
+                self.dtw_matrix(self.get_snippets(downsample_factor=dtw_downsample_factor, 
+                    stack=dtw_stack, stack_dimensions=dtw_dims))
+                return
+            elif dtw == "sum":
+                self.dtw_matrix_multidim_sum(self.z, dtw_dims)
+                return
+            elif dtw == "raw":
+                self.dtw_matrix_multidim(self.z)
+                return
+            else:
+                self._covariances()
+                self._embedding()
 
         return self.Psi  # the final clustering is in Psi
         # self._clustering()
@@ -151,6 +166,240 @@ class Manifolder():
                     self.z.append(data[snip].T)  # time is a function of the columns, internally
 
         self.N = self.z[0].shape[0]  # will be 8, the number of features
+
+    #Returns a numpy array of all windows for dtw
+    def get_windows(self, downsample_factor=1):
+        i_range = int(np.floor(self.z[0].shape[1] - self.H) / self.stepSize)
+        n = len(self.z) * int(np.floor(self.z[0].shape[1] - self.H) / self.stepSize)
+        windows = np.zeros((n, self.H//downsample_factor))
+        for snip in range(len(self.z)):
+            z = self.z[snip]
+            #currently only using one dimension, can add dimensions through stacking
+            #for dim in range(self.N):
+            #    series = z[dim, :] grab a row of data
+            series = z[0, :]
+            for i in range(i_range):
+                windows[snip*len(self.z)+i, :] = self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
+        return windows
+
+
+    #returns a 2d numpy array of all snippets. If stack is left false, only the first 
+    # dimension of the data will be used. If true, it will stack the dimensions
+    # specified in the iterable stack_dimensions, or all dimensions if stack_dimensions
+    # is left as None, by interleaving the data points from each dimension
+    def get_snippets(self, downsample_factor=1, stack=False, stack_dimensions=None):
+        data_len = self.z[0].shape[1]
+        if not stack:
+            num_dims = 1
+            stack_dimensions = (0,)
+        if stack_dimensions == None:
+            num_dims = self.z[0].shape[0]
+            stack_dimensions = range(num_dims)
+        else:
+            num_dims = len(stack_dimensions)
+        all_snippets = np.zeros((len(self.z), (data_len // downsample_factor) * num_dims))
+        if stack:
+            print("stacking " + str(num_dims) + " dimensions")
+            for snip in range(len(self.z)):
+                z = self.z[snip]
+                dims = np.zeros((num_dims, data_len // downsample_factor))
+                for d in range(num_dims):
+                    dims[d,:] = self.downsample(z[d,:], downsample_factor)[:]
+                all_snippets[snip,:] = self.stack(dims)[:]
+            print("done stacking")
+        else:
+            for snip in range(len(self.z)):
+                z = self.z[snip]
+                all_snippets[snip,:] = self.downsample(z[0, :], downsample_factor)
+        print(all_snippets.shape)
+        return all_snippets
+
+
+    def downsample(self, x, skip):
+        if isinstance(x, list):
+            length = len(x)
+        elif isinstance(x, np.ndarray):
+            length = x.shape[0]
+        y = np.zeros(length//skip)
+        j=0
+        for i in range(0, length, skip):
+            y[j] = x[i]
+            j += 1
+        return y
+
+    def stack(self, dims):
+        #transposing results in the data points from each dimension being interwoven.
+        # to connect each dimension end to end, simply remove the call to np.transpose
+        return np.transpose(dims).flatten()
+
+    def dtw_matrix(self, data):
+        start_time = time.time()
+        self.dtw_matrix = np.zeros((data.shape[0], data.shape[0]))
+        print(self.dtw_matrix.shape)
+        start_time = time.time()
+        for i in range(data.shape[0]):
+            for j in range(i):
+                dtw_result = dtw.dtw(data[i,:], data[j,:])#, window_type="sakoechiba", window_args={"window_size":2})
+                self.dtw_matrix[i,j] = dtw_result.distance
+                self.dtw_matrix[j,i] = dtw_result.distance
+        elapsed_time = time.time() - start_time
+        print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print(self.dtw_matrix)
+        return self.dtw_matrix
+
+    #data must be passed as numpy array of snippets or windows
+    def dtw_matrix_parallel(self, data, process_pool=None):
+        if not (sys.version_info >= (3,8,0)):
+            print('Python version is < 3.8, cannot use shared memory. Aborting')
+            assert False
+
+        print('computing dtw matrix in parallel')
+        start_time = time.time()
+        pool = process_pool
+        if process_pool == None:
+            l = Lock()
+            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
+        
+        #process_list = []
+        #m = Manager()
+        #lock = m.Lock()
+        self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
+        
+        print('Python version is >= 3.8, using shared memory')
+        from multiprocessing import shared_memory
+        #create shared memory for numpy arrays
+        #print(data.nbytes)
+        #print(self.dtw_distmat.nbytes)
+        shm_data = shared_memory.SharedMemory(name='dtw_data',
+                                              create=True, size=data.nbytes)
+        shm_result = shared_memory.SharedMemory(name='dtw_result', 
+                                                create=True, size=self.dtw_distmat.nbytes)
+        #copy arrays into shared memory
+        data_copy = np.ndarray(data.shape, data.dtype, buffer=shm_data.buf)
+        np.copyto(data_copy, data, casting='no')
+        self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
+        result = np.ndarray(self.dtw_distmat.shape, self.dtw_distmat.dtype, buffer=shm_result.buf)
+        #use pool to run function in parallel
+        func = partial(workers.dtw_shm, data_copy.shape, data_copy.dtype, 
+                      result.shape, result.dtype)
+
+        #build starmap iterable
+        cpu_count = os.cpu_count()
+        n = self.dtw_distmat.shape[0]
+        each = n*n/float(os.cpu_count())
+        arr = [(0, int(math.sqrt(each)))]
+        for i in range(2, os.cpu_count()):
+            arr.append((arr[-1][1], int(math.sqrt(each*i))))
+        arr.append((arr[-1][1], n))
+        #run function in parallel
+        #for args in arr:
+        #    p = Process(target=func, args=args)
+        #    process_list.append(p)
+        #    print("starting process from ", args[0], " to ", args[1])
+        #    p.start()
+        #for p in process_list:
+        #    print("joining process")
+        #    p.join()
+        pool.starmap(func, arr)
+        print("done processing dtw")
+        if process_pool == None:
+            pool.close()
+            pool.join()
+        #copy results out of shared memory
+        np.copyto(self.dtw_distmat, result, casting='no')
+        del data_copy
+        del result
+
+        #close and cleanup shared memory
+        shm_data.close()
+        shm_data.unlink()
+        shm_result.close()
+        shm_result.unlink()
+        elapsed_time = time.time() - start_time
+        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        return self.dtw_distmat
+
+    def dtw_matrix_multidim(self, data):
+        start_time = time.time()
+        self.dtw_matrix = np.zeros((len(data), len(data)))
+        print(self.dtw_matrix.shape)
+        start_time = time.time()
+        for i in range(len(data)):
+            for j in range(i):
+                dtw_result = dtw.dtw(data[i], data[j])#, window_type="sakoechiba", window_args={"window_size":2})
+                self.dtw_matrix[i,j] = dtw_result.distance
+                self.dtw_matrix[j,i] = dtw_result.distance
+        elapsed_time = time.time() - start_time
+        print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print(self.dtw_matrix)
+        return self.dtw_matrix
+
+    def dtw_matrix_multidim_sum(self, data, dims=None):
+        if dims == None:
+            dims = tuple(range(data[0].shape[0]))
+            print(dims)
+        start_time = time.time()
+        self.dtw_matrix = np.zeros((len(data), len(data)))
+        for dim in dims:
+            single_dim = self.get_snippets(stack=True, stack_dimensions=(dim,))
+            print(self.dtw_matrix.shape)
+            start_time = time.time()
+            for i in range(single_dim.shape[0]):
+                for j in range(i):
+                    dtw_result = dtw.dtw(single_dim[i,:], single_dim[j,:])#, window_type="sakoechiba", window_args={"window_size":2})
+                    self.dtw_matrix[i,j] += dtw_result.distance
+                    self.dtw_matrix[j,i] += dtw_result.distance
+        elapsed_time = time.time() - start_time
+        print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print(self.dtw_matrix)
+        return self.dtw_matrix
+        
+
+    def dtw_call(self, x, y):
+        #here is where you can change dtw params for KMedoids clustering
+        dtw_result = dtw.dtw(x,y)#, window_type="sakoechiba", window_args={"window_size":2})
+        return dtw_result.distance
+
+    def dtw_clustering_skl(self, num_clusters=7):
+        all_windows = []
+        all_snippets = []
+        for snip in range(10):#len(self.z)):
+            z = self.z[snip]
+            #for dim in range(self.N):
+            series = z[1, :]  # z[dim, :] grab a row of data
+            all_snippets.append(series)
+            i_range = int(np.floor(z.shape[1] - self.H) / self.stepSize)
+            for i in range(i_range):
+                #you can add in the downsampling here
+                all_windows.append(self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], 10))
+        
+        func = self.dtw_call
+
+        print("dtw clustering on windows ... ", end="")
+        start_time = time.time()
+        kmedoids = KMedoids(n_clusters = num_clusters, metric=func, init="random").fit(all_windows)
+        elapsed_time = time.time() - start_time
+        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print("dtw cluster centers:")
+        print(kmedoids.cluster_centers_)
+        print("dtw cluster labels:")
+        print(kmedoids.labels_)
+        self.kmedoids_windows = kmedoids
+        
+        
+        print("dtw clustering on full snippets ... ", end="")
+        start_time = time.time()
+        kmedoids = KMedoids(n_clusters = num_clusters, metric=func, init="random").fit(all_snippets)
+        elapsed_time = time.time() - start_time
+        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+        print("dtw cluster centers:")
+        print(kmedoids.cluster_centers_)
+        print("dtw cluster labels:")
+        print(kmedoids.labels_)
+        self.kmedoids_snippets = kmedoids
+        return kmedoids
+
+
 
     def _histograms_overlap(self):
 
@@ -785,38 +1034,36 @@ class Manifolder():
             self.IDX = kmeans.labels_
         else:
             print('calculating distances')
-            row, col = self.Psi.shape
-            combined = []
             
-            for i1 in range(row):
-                combined.append(self.Psi[i1, :intrinsicDim])
-            print(combined)
             if (distance_measure == None):
                 print('Euclidean distances used in clustering')
+                row, col = self.Psi.shape
+                combined = []
+                for i1 in range(row):
+                    combined.append(self.Psi[i1, :intrinsicDim])
                 distmat = calculate_distance_matrix(combined)
             else:
+            #elif (distance_measure == 'dtw'):
                 print('DTW distances used in clustering')
-                distmat_raw = cdist_dtw(combined) #to replace with R function
-                
-                rowdist, coldist = distmat.shape
-                distmat = []
-                for i1 in range(rowd):
-                    distmat.append(distmat_raw[i1])
+                distmat = self.dtw_distmat
             
             print('sampling initial medoids')
-            sample_idx = random.sample(range(row), numClusters)
+            sample_idx = random.sample(range(distmat.shape[0]), numClusters)
             initial_medoids = sample_idx
 
             print('running k-medoids')
-            kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
-            kmeds.process()
-            temp_idx = np.array(kmeds.get_clusters())          
+            self.kmeds = kmedoids(distmat, initial_medoids, data_type='distance_matrix')
+            self.kmeds.process()
+            temp_idx = np.array(self.kmeds.get_clusters())          
             final_idx = []
-            for i1 in range(row):
+            for i1 in range(distmat.shape[0]):
                 for j1 in range(numClusters):
                     if (i1 in temp_idx[j1]):
                         final_idx.append(j1)
             self.IDX = np.array(final_idx)
+            print(self.IDX.shape)
+            if (distance_measure != None):
+                return
 
 
         # TODO decide how to plot multiple snips
