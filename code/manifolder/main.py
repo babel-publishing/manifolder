@@ -171,15 +171,17 @@ class Manifolder():
     def get_windows(self, downsample_factor=1):
         i_range = int(np.floor(self.z[0].shape[1] - self.H) / self.stepSize)
         n = len(self.z) * int(np.floor(self.z[0].shape[1] - self.H) / self.stepSize)
-        windows = np.zeros((n, self.H//downsample_factor))
+        windows = []
+        np.zeros((self.H//downsample_factor))
         for snip in range(len(self.z)):
             z = self.z[snip]
             #currently only using one dimension, can add dimensions through stacking
             #for dim in range(self.N):
             #    series = z[dim, :] grab a row of data
-            series = z[0, :]
+            
             for i in range(i_range):
-                windows[snip*len(self.z)+i, :] = self.downsample(series[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
+                windows[snip*len(self.z)+i, :] = self.downsample(z[i * self.stepSize:i * self.stepSize + self.H], downsample_factor)
+                
         return windows
 
 
