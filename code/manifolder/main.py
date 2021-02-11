@@ -139,7 +139,7 @@ class Manifolder():
                 self.dtw_matrix_multidim_sum(self.z, dtw_dims)
                 return
             elif dtw == "raw":
-                self.dtw_matrix_alldims(self.z)
+                self.dtw_matrix_multidim(self.z)
                 return
             else:
                 self._covariances()
@@ -319,9 +319,9 @@ class Manifolder():
         print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         return self.dtw_distmat
 
-    def dtw_matrix_alldims(self, data):
+    def dtw_matrix_multidim(self, data):
         start_time = time.time()
-        self.dtw_matrix = np.zeros((data.shape[0], data.shape[0]))
+        self.dtw_matrix = np.zeros((len(data), len(data)))
         print(self.dtw_matrix.shape)
         start_time = time.time()
         for i in range(len(data)):
