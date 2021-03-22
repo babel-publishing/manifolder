@@ -133,13 +133,20 @@ class Manifolder():
             self._histograms_overlap()
             if dtw == "stack":
                 self.dtw_matrix(self.get_snippets(downsample_factor=dtw_downsample_factor, 
-                    stack=dtw_stack, stack_dimensions=dtw_dims))
+                    stack=True, stack_dimensions=dtw_dims))
                 return
             elif dtw == "sum":
                 self.dtw_matrix_multidim_sum(self.z, dtw_dims)
                 return
             elif dtw == "raw":
                 self.dtw_matrix_multidim(self.z)
+                return
+            elif dtw == "zscore":
+                self.dtw_matrix(self.zscore_singledim(self.get_snippets(downsample_factor=dtw_downsample_factor, 
+                    stack=True, stack_dimensions=dtw_dims)))
+                return
+            elif dtw == "zscore_mdim":
+                self.dtw_matrix_multidim(self.zscore_multidim(self.z))
                 return
             else:
                 self._covariances()
@@ -248,6 +255,20 @@ class Manifolder():
         print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         print(self.dtw_matrix)
         return self.dtw_matrix
+        
+    def zscore_singledim(self, data):
+        #subtract mean and divide by standard deviation
+        new_data = np.zeros(data.shape)
+        for i in range(data.shape[0]):
+            new_data[i,:] = (data[i,:] - np.mean(data[i,:])) / np.std(data[i,:])
+        return new_data
+    
+    def zscore_multidim(self, data):
+        arr = []
+        for i in range(len(data)):
+            snippet = data[i]
+            arr.append((snippet - np.mean(snippet)) / np.std(snippet))
+        return arr
 
     #data must be passed as numpy array of snippets or windows
     def dtw_matrix_parallel(self, data, process_pool=None):
