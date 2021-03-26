@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
+# from manifolder.parallel import workers
+# from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
 
 import functools
 from functools import partial
@@ -77,7 +77,7 @@ class Manifolder():
     >>> clusters() = manifolder.clusters()
     """
 
-    def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, ncov=40, n_jobs=None):
+    def __init__(self, dim=3, H=40, step_size=5, nbins=5, distance_measure=None, ncov=40, n_jobs=None, num_rdims=10):
 
         self.Dim = dim
         self.H = H
@@ -87,6 +87,8 @@ class Manifolder():
         self.distance_measure = distance_measure
 
         self.ncov = ncov
+        
+        self.num_rdims = num_rdims
 
     def fit_transform(self, X, parallel=False, dtw=None, dtw_downsample_factor=1, dtw_dims=None):
         """
@@ -757,7 +759,8 @@ class Manifolder():
         # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
 
         # Compute only 10 eigenvectors, must have symmetric matrix
-        V, E = mh.eigs_like_matlab(W2,10)
+        num_rdims =self.num_rdims
+        V, E = mh.eigs_like_matlab(W2,num_rdims)
 
         # print('V.shape', V.shape)
         # print('E.shape', E.shape)
