@@ -759,6 +759,7 @@ class Manifolder():
         # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
 
         # Compute only 10 eigenvectors, must have symmetric matrix
+        # V, E = mh.eigs_like_matlab(W2,10)
         num_rdims =self.num_rdims
         V, E = mh.eigs_like_matlab(W2,num_rdims)
 
@@ -978,7 +979,9 @@ class Manifolder():
         # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
 
         # Compute only 10 eigenvectors, must have symmetric matrix
-        V, E = mh.eigs_like_matlab(W2,10)
+        # V, E = mh.eigs_like_matlab(W2,10)
+        num_rdims =self.num_rdims
+        V, E = mh.eigs_like_matlab(W2,num_rdims)
 
         # print('V.shape', V.shape)
         # print('E.shape', E.shape)
