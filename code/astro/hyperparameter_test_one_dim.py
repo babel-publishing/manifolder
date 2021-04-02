@@ -272,7 +272,10 @@ for dim in dim_set:
                         #print("TP:", truePositive)
                         #print("FN:", falseNegative)
 
-
+all_results = sorted(all_results, key=lambda array: array[2])
+for i in range(len(all_results)-1, len(all_results)-11, -1):
+    result = all_results[i]
+    print(result)
 
 filename = ".\hyperparameter_sweep_results.pickle"
 counter = 1
