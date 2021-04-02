@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-# from manifolder.parallel import workers
-# from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
+from manifolder.parallel import workers
+from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
 
 import functools
 from functools import partial
@@ -269,7 +269,10 @@ class Manifolder():
         arr = []
         for i in range(len(data)):
             snippet = data[i]
-            arr.append((snippet - np.mean(snippet)) / np.std(snippet))
+            new_data = np.zeros(snippet.shape)
+            for j in range(snippet.shape[0]):
+                new_data[j,:] = (snippet[j,:] - np.mean(snippet[j,:])) / np.std(snippet[j,:])
+            arr.append(new_data)
         return arr
 
     #data must be passed as numpy array of snippets or windows
