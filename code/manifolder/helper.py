@@ -335,7 +335,7 @@ def simplify_data(z_shape=(8, 87660)):
 
 
 def test_moms():
-    """ look at numpy's calculation of higher order momets (through kurtosis), see
+    """ look at numpy's calculation of higher order moments (through kurtosis), see
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skew.html#scipy.stats.skew
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kurtosis.html#scipy.stats.kurtosis
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.moment.html
