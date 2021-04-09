@@ -10,8 +10,13 @@ from sklearn.cluster import KMeans
 
 from manifolder import helper as mh
 
-from manifolder.parallel import workers
-from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
+
+try:
+    from multiprocessing import Pool, TimeoutError, Lock#, Process, Manager
+    from manifolder.parallel import workers
+    enable_multiprocessing = True
+except:
+    enable_multiprocessing = False
 
 import functools
 from functools import partial
@@ -114,7 +119,7 @@ class Manifolder():
         # print('fit was called, not yet implemented')
         self._load_data(X)
 
-        if parallel:
+        if parallel and enable_multiprocessing:
             l = Lock()
             pool = Pool(initializer=workers.parallel_init, initargs=(l,))#, maxtasksperchild=1)
             self._histograms_parallel(process_pool=pool)
@@ -132,6 +137,8 @@ class Manifolder():
             if dtw != None:
                 return
         else:
+            if parallel:
+                print("Unable to use multiprocessing, falling back to single-threaded mode")
             self._histograms_overlap()
             if dtw == "stack":
                 self.dtw_matrix(self.get_snippets(downsample_factor=dtw_downsample_factor, 
@@ -257,7 +264,7 @@ class Manifolder():
         print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         print(self.dtw_matrix)
         return self.dtw_matrix
-        
+
     def zscore_singledim(self, data):
         #subtract mean and divide by standard deviation
         new_data = np.zeros(data.shape)
@@ -274,78 +281,6 @@ class Manifolder():
                 new_data[j,:] = (snippet[j,:] - np.mean(snippet[j,:])) / np.std(snippet[j,:])
             arr.append(new_data)
         return arr
-
-    #data must be passed as numpy array of snippets or windows
-    def dtw_matrix_parallel(self, data, process_pool=None):
-        if not (sys.version_info >= (3,8,0)):
-            print('Python version is < 3.8, cannot use shared memory. Aborting')
-            assert False
-
-        print('computing dtw matrix in parallel')
-        start_time = time.time()
-        pool = process_pool
-        if process_pool == None:
-            l = Lock()
-            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
-        
-        #process_list = []
-        #m = Manager()
-        #lock = m.Lock()
-        self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
-        
-        print('Python version is >= 3.8, using shared memory')
-        from multiprocessing import shared_memory
-        #create shared memory for numpy arrays
-        #print(data.nbytes)
-        #print(self.dtw_distmat.nbytes)
-        shm_data = shared_memory.SharedMemory(name='dtw_data',
-                                              create=True, size=data.nbytes)
-        shm_result = shared_memory.SharedMemory(name='dtw_result', 
-                                                create=True, size=self.dtw_distmat.nbytes)
-        #copy arrays into shared memory
-        data_copy = np.ndarray(data.shape, data.dtype, buffer=shm_data.buf)
-        np.copyto(data_copy, data, casting='no')
-        self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
-        result = np.ndarray(self.dtw_distmat.shape, self.dtw_distmat.dtype, buffer=shm_result.buf)
-        #use pool to run function in parallel
-        func = partial(workers.dtw_shm, data_copy.shape, data_copy.dtype, 
-                      result.shape, result.dtype)
-
-        #build starmap iterable
-        cpu_count = os.cpu_count()
-        n = self.dtw_distmat.shape[0]
-        each = n*n/float(os.cpu_count())
-        arr = [(0, int(math.sqrt(each)))]
-        for i in range(2, os.cpu_count()):
-            arr.append((arr[-1][1], int(math.sqrt(each*i))))
-        arr.append((arr[-1][1], n))
-        #run function in parallel
-        #for args in arr:
-        #    p = Process(target=func, args=args)
-        #    process_list.append(p)
-        #    print("starting process from ", args[0], " to ", args[1])
-        #    p.start()
-        #for p in process_list:
-        #    print("joining process")
-        #    p.join()
-        pool.starmap(func, arr)
-        print("done processing dtw")
-        if process_pool == None:
-            pool.close()
-            pool.join()
-        #copy results out of shared memory
-        np.copyto(self.dtw_distmat, result, casting='no')
-        del data_copy
-        del result
-
-        #close and cleanup shared memory
-        shm_data.close()
-        shm_data.unlink()
-        shm_result.close()
-        shm_result.unlink()
-        elapsed_time = time.time() - start_time
-        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
-        return self.dtw_distmat
 
     def dtw_matrix_multidim(self, data):
         start_time = time.time()
@@ -381,7 +316,6 @@ class Manifolder():
         print('DTW done in ', str(np.round(elapsed_time, 2)), 'seconds!')
         print(self.dtw_matrix)
         return self.dtw_matrix
-        
 
     def dtw_call(self, x, y):
         #here is where you can change dtw params for KMedoids clustering
@@ -426,8 +360,6 @@ class Manifolder():
         print(kmedoids.labels_)
         self.kmedoids_snippets = kmedoids
         return kmedoids
-
-
 
     def _histograms_overlap(self):
 
@@ -498,38 +430,6 @@ class Manifolder():
                 self.snip_number = np.append(self.snip_number,snip*np.ones(self.z_hist[snip].shape[1]))
 
             print(' done')  # prints 'done' after each snip
-
-    def _histograms_parallel(self, process_pool=None):
-
-        n = len(self.z)
-
-        hist_bins = mh.histogram_bins_all_snips(self.z, self.nbins)
-
-        # JD
-        # z_hist = []  # will build up  list of histograms, one for per snippet
-        # for z in self.z:
-        # z is a single snippet here, and self.z is the full list of all snippets
-        print("Calculating histograms in parallel ... ", end='')
-        start_time = time.time()
-        histfunc = partial(workers.histograms, self.z, self.H, self.stepSize, self.N, hist_bins)
-        pool = process_pool
-        if process_pool == None:
-            l = Lock()
-            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
-        results = pool.map(histfunc, range(n), chunksize=5)
-        if process_pool == None:
-            pool.close()
-            pool.join()
-        for snip in range(n):
-            # convert from list back to numpy array
-            if snip == 0:
-                self.z_hist = [np.concatenate(results[snip])]
-                self.snip_number = snip*np.ones(self.z_hist[snip].shape[1])
-            else:
-                self.z_hist.append(np.concatenate(results[snip]))
-                self.snip_number = np.append(self.snip_number,snip*np.ones(self.z_hist[snip].shape[1]))
-        elapsed_time = time.time() - start_time
-        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
 
     def _covariances(self):
         #
@@ -634,39 +534,6 @@ class Manifolder():
 
             print(' done')  # prints done at the end of each snip
 
-
-    def _covariances_parallel(self, process_pool=None):
-        #
-        #
-        ## Configuration
-        # ncov = 10    # (previous value) size of neighborhood for covariance
-        # ncov = 40  # size of neighborhood for covariance
-        # ncov is passed in, above
-
-        n = len(self.z_hist)
-        print("Computing local covariances in parallel ... ", end='')
-        start_time = time.time()
-        covfunc = partial(workers.covars, self.z_hist, self.ncov, self.nbins, self.N, self.Dim)
-        pool = process_pool
-        if process_pool == None:
-            l = Lock()
-            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
-        results = pool.map(covfunc, range(n), chunksize=5)
-        if process_pool == None:
-            pool.close()
-            pool.join()
-        for snip in range(n): 
-            z_mean, inv_c = results[snip]
-            # append z_mean and inv_c as next rows of mat
-            if snip == 0:
-                self.z_mean = z_mean
-                self.inv_c = inv_c
-            else:
-                self.z_mean = np.append(self.z_mean, z_mean, axis=1)
-                self.inv_c = np.append(self.inv_c, inv_c, axis=2)
-        elapsed_time = time.time() - start_time
-        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
-
     def _embedding(self):
         ###
         ### Part I
@@ -727,226 +594,6 @@ class Manifolder():
             Dis[:, j] = (np.tile(a2, [M, 1])).flatten() + b2 - 2 * ab
 
         print('done!')
-
-        ## Anisotropic kernel
-
-        print('aniostropic kernel ... ', end='')
-
-        ep = np.median(np.median(Dis, 0))  # default scale - should be adjusted for each new realizations
-
-        A = np.exp(-Dis / (4 * ep))
-        W_sml = A.T @ A
-        d1 = np.sum(W_sml, 0)
-        A1 = A / np.tile(np.sqrt(d1), [M, 1])
-        W1 = A1.T @ A1
-
-        d2 = np.sum(W1, 0)
-        A2 = A1 / np.tile(np.sqrt(d2), [M, 1])
-        W2 = A2.T @ A2
-
-        D = np.diag(np.sqrt(1 / d2))
-
-        ###
-        ### Part II
-        ###
-
-        # Compute eigenvectors
-
-        # in numpy,
-        # from numpy import linalg as LA
-        # w, v = LA.eig(np.diag((1, 2, 3)))
-        #  v are the values, diagonal in a matrix, and w are the eigenvectors
-
-        # Compute all eigenvectors and select 10
-        # [V, E] = eigs(W2, 10) Matlab
-        # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
-
-        # Compute only 10 eigenvectors, must have symmetric matrix
-        # V, E = mh.eigs_like_matlab(W2,10)
-        num_rdims =self.num_rdims
-        V, E = mh.eigs_like_matlab(W2,num_rdims)
-
-        # print('V.shape', V.shape)
-        # print('E.shape', E.shape)
-
-        # python np.sum(A,0) <=> matlab sum(A)
-        # in matlab, srted are the values of sum(E) sorted (in descending order)
-        # and IE are the indices that sorted them
-        # [srtdE, IE] = sort(sum(E), 'descend')
-
-        # this is python eqivalent ... note that IE will have values one less than the MATLAB, because zero indexing
-        # TODO - is this sorted right?
-        IE = np.sum(E, 0).argsort()[::-1]  # find the indices to sort, and reverse them
-        srtdE = np.sum(E, 0)[IE]
-
-        # Phi = D @ V(:, IE(1, 2:10))
-        Phi = D @ V[:, IE[1:]]
-
-        print('done')
-
-        ###
-        ### Part III
-        ###
-
-        # TODO - not necessary?  (Independent coordinates?)
-
-        # Extend reference embedding to the entire set
-        print('extending embedding (building Psi) ... ', end='')
-
-        Psi_list = []  # holds all the psi_i values
-
-        omega = np.sum(A2, 1)
-        A2_nrm = A2 / np.tile(omega.reshape([-1, 1]), [1, m])  # omega needed to be shaped as a column
-
-        # for i=1:size(Phi,2)
-        for i in range(Phi.shape[1]):
-            # this line is strange ... order of operations for @?, what is the offset?
-            psi_i = A2_nrm @ Phi[:, i] / np.sqrt((srtdE[i + 1]))
-            # [Psi, psi_i]
-            Psi_list.append(psi_i)
-
-        # convert Psi_list back into an array, shaped like MATLAB version
-        self.Psi = np.array(Psi_list).T
-
-        # psi have have very small imaginary values ...
-        # cast to real here, but need to check
-        self.Psi = np.real(self.Psi)
-
-        # print('Psi.shape', Psi.shape)
-
-        print('done')
-
-        # Since close to a degenerate case - try to rotate according to:
-        # A. Singer and R. R. Coifman, "Spectral ICA", ACHA 2007.
-        #
-
-    def _embedding_parallel(self, process_pool=None):
-        ###
-        ### Part I
-        ###
-
-        ## Configuration
-
-        # the variable m defines some subset of the data, to make computation faster;
-        # this could be various values (10% of the data, all the data, etc.), as long
-        # as it is not GREATER than the length of data.
-        #   For the smallest change, setting to min 4000 or the data size
-
-        # m = 4000                  # starting point for sequential processing/extension
-        #
-        # TODO - m allows you to sample various sections of the manifold, ratheer than looking at
-        # all points to all points
-        # the random points can come from the different chunks as well?
-        #   ... for ease of coding, the datastructure could be back to 2D data
-        m = np.min((4000, self.z_mean.shape[1]))
-        print('using', m, 'for variable m')
-
-        data = self.z_mean.T  # set the means as the input set
-        M = data.shape[0]
-
-        # Choose subset of examples as reference
-        # this is 'take m (4000) random values from z_mean, and sort them
-        # subidx = sort(randperm(size(z_mean, 2), m))
-        # Choose first m examples as reference (commented out, don't do this
-        # subidx = 1:m;
-        subidx = np.arange(self.z_mean.shape[1])
-        np.random.shuffle(subidx)  # shuffle is inplace in python
-        subidx = subidx[:m]  # take a portion of the data
-        subidx.sort()  # sort is also in place ...
-
-        # dataref = data(subidx,:)
-        dataref = data[subidx, :]
-
-        ##
-        # Affinity matrix computation
-
-        Dis = np.zeros((M, m))
-        print('computing Dis matrix in parallel')
-        start_time = time.time()
-        pool = process_pool
-        if process_pool == None:
-            l = Lock()
-            pool = Pool(initializer=workers.parallel_init, initargs=(l,))
-        if sys.version_info >= (3,8,0):
-            print('Python version is >= 3.8, using shared memory')
-            from multiprocessing import shared_memory
-            #create shared memory for numpy arrays
-            shm_inv_c = shared_memory.SharedMemory(name='inv_c',
-                                                   create=True, size=self.inv_c.nbytes)
-            shm_subidx = shared_memory.SharedMemory(name='subidx',
-                                                    create=True, size=subidx.nbytes)
-            shm_dataref = shared_memory.SharedMemory(name='dataref',
-                                                     create=True, size=dataref.nbytes)
-            shm_data = shared_memory.SharedMemory(name='data',
-                                                  create=True, size=data.nbytes)
-            
-            shm_result = shared_memory.SharedMemory(name='dis', 
-                                                    create=True, size=Dis.nbytes)
-            #copy arrays into shared memory
-            inv_c_copy = np.ndarray(self.inv_c.shape, self.inv_c.dtype, buffer=shm_inv_c.buf)
-            np.copyto(inv_c_copy, self.inv_c, casting='no')
-            subidx_copy = np.ndarray(subidx.shape, subidx.dtype, buffer=shm_subidx.buf)
-            np.copyto(subidx_copy, subidx, casting='no')
-            dataref_copy = np.ndarray(dataref.shape, dataref.dtype, buffer=shm_dataref.buf)
-            np.copyto(dataref_copy, dataref, casting='no')
-            data_copy = np.ndarray(data.shape, data.dtype, buffer=shm_data.buf)
-            np.copyto(data_copy, data, casting='no')
-
-            #use pool to run function in parallel
-            func = partial(workers.dis_shm, inv_c_copy.shape, inv_c_copy.dtype,
-                          subidx_copy.shape, subidx_copy.dtype,
-                          dataref_copy.shape, dataref_copy.dtype,
-                          data_copy.shape, data_copy.dtype, 
-                          Dis.shape, Dis.dtype, M)
-            
-            #build starmap iterable
-            arr = []
-            cpu_count = os.cpu_count()
-            step = m//cpu_count
-            start = 0
-            for i in range(cpu_count-1):
-                arr.append((step, start))
-                start = start + step
-            arr.append((m - start, start))
-            #run function in parallel
-            pool.starmap(func, arr)
-            
-            if process_pool == None:
-                pool.close()
-                pool.join()
-            #copy results out of shared memory
-            Dis_copy = np.ndarray(Dis.shape, Dis.dtype, buffer=shm_result.buf)
-            np.copyto(Dis, Dis_copy, casting='no')
-            del inv_c_copy
-            del subidx_copy
-            del dataref_copy
-            del data_copy
-            del Dis_copy
-            
-            #close and cleanup shared memory
-            shm_inv_c.close()
-            shm_inv_c.unlink()
-            shm_subidx.close()
-            shm_subidx.unlink()
-            shm_dataref.close()
-            shm_dataref.unlink()
-            shm_data.close()
-            shm_data.unlink()
-            shm_result.close()
-            shm_result.unlink()
-        else:
-            # without shared memory, each worker process will use ~700MB of RAM.
-            # with it, they will use ~100MB each
-            print('Python version is < 3.8, cannot use shared memory. Beware of high memory usage')
-            dis = partial(workers.dis, self.inv_c, subidx, dataref, data, M)
-            results = pool.map(dis, range(m), chunksize=m//os.cpu_count())
-            if process_pool == None:
-                pool.close()
-                pool.join()
-            for j in range(m):
-                Dis[:, j] = results[j]
-        elapsed_time = time.time() - start_time
-        print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
 
         ## Anisotropic kernel
 
@@ -1201,3 +848,355 @@ class Manifolder():
 
         plt.show()
 
+    if enable_multiprocessing:
+        def _histograms_parallel(self, process_pool=None):
+
+            n = len(self.z)
+
+            hist_bins = mh.histogram_bins_all_snips(self.z, self.nbins)
+
+            # JD
+            # z_hist = []  # will build up  list of histograms, one for per snippet
+            # for z in self.z:
+            # z is a single snippet here, and self.z is the full list of all snippets
+            print("Calculating histograms in parallel ... ", end='')
+            start_time = time.time()
+            histfunc = partial(workers.histograms, self.z, self.H, self.stepSize, self.N, hist_bins)
+            pool = process_pool
+            if process_pool == None:
+                l = Lock()
+                pool = Pool(initializer=workers.parallel_init, initargs=(l,))
+            results = pool.map(histfunc, range(n), chunksize=5)
+            if process_pool == None:
+                pool.close()
+                pool.join()
+            for snip in range(n):
+                # convert from list back to numpy array
+                if snip == 0:
+                    self.z_hist = [np.concatenate(results[snip])]
+                    self.snip_number = snip*np.ones(self.z_hist[snip].shape[1])
+                else:
+                    self.z_hist.append(np.concatenate(results[snip]))
+                    self.snip_number = np.append(self.snip_number,snip*np.ones(self.z_hist[snip].shape[1]))
+            elapsed_time = time.time() - start_time
+            print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+
+        def _covariances_parallel(self, process_pool=None):
+            #
+            #
+            ## Configuration
+            # ncov = 10    # (previous value) size of neighborhood for covariance
+            # ncov = 40  # size of neighborhood for covariance
+            # ncov is passed in, above
+
+            n = len(self.z_hist)
+            print("Computing local covariances in parallel ... ", end='')
+            start_time = time.time()
+            covfunc = partial(workers.covars, self.z_hist, self.ncov, self.nbins, self.N, self.Dim)
+            pool = process_pool
+            if process_pool == None:
+                l = Lock()
+                pool = Pool(initializer=workers.parallel_init, initargs=(l,))
+            results = pool.map(covfunc, range(n), chunksize=5)
+            if process_pool == None:
+                pool.close()
+                pool.join()
+            for snip in range(n): 
+                z_mean, inv_c = results[snip]
+                # append z_mean and inv_c as next rows of mat
+                if snip == 0:
+                    self.z_mean = z_mean
+                    self.inv_c = inv_c
+                else:
+                    self.z_mean = np.append(self.z_mean, z_mean, axis=1)
+                    self.inv_c = np.append(self.inv_c, inv_c, axis=2)
+            elapsed_time = time.time() - start_time
+            print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+
+        def _embedding_parallel(self, process_pool=None):
+            ###
+            ### Part I
+            ###
+
+            ## Configuration
+
+            # the variable m defines some subset of the data, to make computation faster;
+            # this could be various values (10% of the data, all the data, etc.), as long
+            # as it is not GREATER than the length of data.
+            #   For the smallest change, setting to min 4000 or the data size
+
+            # m = 4000                  # starting point for sequential processing/extension
+            #
+            # TODO - m allows you to sample various sections of the manifold, ratheer than looking at
+            # all points to all points
+            # the random points can come from the different chunks as well?
+            #   ... for ease of coding, the datastructure could be back to 2D data
+            m = np.min((4000, self.z_mean.shape[1]))
+            print('using', m, 'for variable m')
+
+            data = self.z_mean.T  # set the means as the input set
+            M = data.shape[0]
+
+            # Choose subset of examples as reference
+            # this is 'take m (4000) random values from z_mean, and sort them
+            # subidx = sort(randperm(size(z_mean, 2), m))
+            # Choose first m examples as reference (commented out, don't do this
+            # subidx = 1:m;
+            subidx = np.arange(self.z_mean.shape[1])
+            np.random.shuffle(subidx)  # shuffle is inplace in python
+            subidx = subidx[:m]  # take a portion of the data
+            subidx.sort()  # sort is also in place ...
+
+            # dataref = data(subidx,:)
+            dataref = data[subidx, :]
+
+            ##
+            # Affinity matrix computation
+
+            Dis = np.zeros((M, m))
+            print('computing Dis matrix in parallel')
+            start_time = time.time()
+            pool = process_pool
+            if process_pool == None:
+                l = Lock()
+                pool = Pool(initializer=workers.parallel_init, initargs=(l,))
+            if sys.version_info >= (3,8,0):
+                print('Python version is >= 3.8, using shared memory')
+                from multiprocessing import shared_memory
+                #create shared memory for numpy arrays
+                shm_inv_c = shared_memory.SharedMemory(name='inv_c',
+                                                       create=True, size=self.inv_c.nbytes)
+                shm_subidx = shared_memory.SharedMemory(name='subidx',
+                                                        create=True, size=subidx.nbytes)
+                shm_dataref = shared_memory.SharedMemory(name='dataref',
+                                                         create=True, size=dataref.nbytes)
+                shm_data = shared_memory.SharedMemory(name='data',
+                                                      create=True, size=data.nbytes)
+                
+                shm_result = shared_memory.SharedMemory(name='dis', 
+                                                        create=True, size=Dis.nbytes)
+                #copy arrays into shared memory
+                inv_c_copy = np.ndarray(self.inv_c.shape, self.inv_c.dtype, buffer=shm_inv_c.buf)
+                np.copyto(inv_c_copy, self.inv_c, casting='no')
+                subidx_copy = np.ndarray(subidx.shape, subidx.dtype, buffer=shm_subidx.buf)
+                np.copyto(subidx_copy, subidx, casting='no')
+                dataref_copy = np.ndarray(dataref.shape, dataref.dtype, buffer=shm_dataref.buf)
+                np.copyto(dataref_copy, dataref, casting='no')
+                data_copy = np.ndarray(data.shape, data.dtype, buffer=shm_data.buf)
+                np.copyto(data_copy, data, casting='no')
+
+                #use pool to run function in parallel
+                func = partial(workers.dis_shm, inv_c_copy.shape, inv_c_copy.dtype,
+                              subidx_copy.shape, subidx_copy.dtype,
+                              dataref_copy.shape, dataref_copy.dtype,
+                              data_copy.shape, data_copy.dtype, 
+                              Dis.shape, Dis.dtype, M)
+                
+                #build starmap iterable
+                arr = []
+                cpu_count = os.cpu_count()
+                step = m//cpu_count
+                start = 0
+                for i in range(cpu_count-1):
+                    arr.append((step, start))
+                    start = start + step
+                arr.append((m - start, start))
+                #run function in parallel
+                pool.starmap(func, arr)
+                
+                if process_pool == None:
+                    pool.close()
+                    pool.join()
+                #copy results out of shared memory
+                Dis_copy = np.ndarray(Dis.shape, Dis.dtype, buffer=shm_result.buf)
+                np.copyto(Dis, Dis_copy, casting='no')
+                del inv_c_copy
+                del subidx_copy
+                del dataref_copy
+                del data_copy
+                del Dis_copy
+                
+                #close and cleanup shared memory
+                shm_inv_c.close()
+                shm_inv_c.unlink()
+                shm_subidx.close()
+                shm_subidx.unlink()
+                shm_dataref.close()
+                shm_dataref.unlink()
+                shm_data.close()
+                shm_data.unlink()
+                shm_result.close()
+                shm_result.unlink()
+            else:
+                # without shared memory, each worker process will use ~700MB of RAM.
+                # with it, they will use ~100MB each
+                print('Python version is < 3.8, cannot use shared memory. Beware of high memory usage')
+                dis = partial(workers.dis, self.inv_c, subidx, dataref, data, M)
+                results = pool.map(dis, range(m), chunksize=m//os.cpu_count())
+                if process_pool == None:
+                    pool.close()
+                    pool.join()
+                for j in range(m):
+                    Dis[:, j] = results[j]
+            elapsed_time = time.time() - start_time
+            print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+
+            ## Anisotropic kernel
+
+            print('aniostropic kernel ... ', end='')
+
+            ep = np.median(np.median(Dis, 0))  # default scale - should be adjusted for each new realizations
+
+            A = np.exp(-Dis / (4 * ep))
+            W_sml = A.T @ A
+            d1 = np.sum(W_sml, 0)
+            A1 = A / np.tile(np.sqrt(d1), [M, 1])
+            W1 = A1.T @ A1
+
+            d2 = np.sum(W1, 0)
+            A2 = A1 / np.tile(np.sqrt(d2), [M, 1])
+            W2 = A2.T @ A2
+
+            D = np.diag(np.sqrt(1 / d2))
+
+            ###
+            ### Part II
+            ###
+
+            # Compute eigenvectors
+
+            # in numpy,
+            # from numpy import linalg as LA
+            # w, v = LA.eig(np.diag((1, 2, 3)))
+            #  v are the values, diagonal in a matrix, and w are the eigenvectors
+
+            # Compute all eigenvectors and select 10
+            # [V, E] = eigs(W2, 10) Matlab
+            # V, E = mh.eig_like_matlab(W2, 10)  # think this is correct now ...
+
+            # Compute only 10 eigenvectors, must have symmetric matrix
+            # V, E = mh.eigs_like_matlab(W2,10)
+            num_rdims =self.num_rdims
+            V, E = mh.eigs_like_matlab(W2,num_rdims)
+
+            # print('V.shape', V.shape)
+            # print('E.shape', E.shape)
+
+            # python np.sum(A,0) <=> matlab sum(A)
+            # in matlab, srted are the values of sum(E) sorted (in descending order)
+            # and IE are the indices that sorted them
+            # [srtdE, IE] = sort(sum(E), 'descend')
+
+            # this is python eqivalent ... note that IE will have values one less than the MATLAB, because zero indexing
+            # TODO - is this sorted right?
+            IE = np.sum(E, 0).argsort()[::-1]  # find the indices to sort, and reverse them
+            srtdE = np.sum(E, 0)[IE]
+
+            # Phi = D @ V(:, IE(1, 2:10))
+            Phi = D @ V[:, IE[1:]]
+
+            print('done')
+
+            ###
+            ### Part III
+            ###
+
+            # TODO - not necessary?  (Independent coordinates?)
+
+            # Extend reference embedding to the entire set
+            print('extending embedding (building Psi) ... ', end='')
+
+            Psi_list = []  # holds all the psi_i values
+
+            omega = np.sum(A2, 1)
+            A2_nrm = A2 / np.tile(omega.reshape([-1, 1]), [1, m])  # omega needed to be shaped as a column
+
+            # for i=1:size(Phi,2)
+            for i in range(Phi.shape[1]):
+                # this line is strange ... order of operations for @?, what is the offset?
+                psi_i = A2_nrm @ Phi[:, i] / np.sqrt((srtdE[i + 1]))
+                # [Psi, psi_i]
+                Psi_list.append(psi_i)
+
+            # convert Psi_list back into an array, shaped like MATLAB version
+            self.Psi = np.array(Psi_list).T
+
+            # psi have have very small imaginary values ...
+            # cast to real here, but need to check
+            self.Psi = np.real(self.Psi)
+
+            # print('Psi.shape', Psi.shape)
+
+            print('done')
+
+        #data must be passed as numpy array of snippets or windows
+        def dtw_matrix_parallel(self, data, process_pool=None):
+            if not (sys.version_info >= (3,8,0)):
+                print('Python version is < 3.8, cannot use shared memory. Aborting')
+                assert False
+
+            print('computing dtw matrix in parallel')
+            start_time = time.time()
+            pool = process_pool
+            if process_pool == None:
+                l = Lock()
+                pool = Pool(initializer=workers.parallel_init, initargs=(l,))
+            
+            #process_list = []
+            #m = Manager()
+            #lock = m.Lock()
+            self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
+            
+            print('Python version is >= 3.8, using shared memory')
+            from multiprocessing import shared_memory
+            #create shared memory for numpy arrays
+            #print(data.nbytes)
+            #print(self.dtw_distmat.nbytes)
+            shm_data = shared_memory.SharedMemory(name='dtw_data',
+                                                  create=True, size=data.nbytes)
+            shm_result = shared_memory.SharedMemory(name='dtw_result', 
+                                                    create=True, size=self.dtw_distmat.nbytes)
+            #copy arrays into shared memory
+            data_copy = np.ndarray(data.shape, data.dtype, buffer=shm_data.buf)
+            np.copyto(data_copy, data, casting='no')
+            self.dtw_distmat = np.zeros((data.shape[0], data.shape[0]))
+            result = np.ndarray(self.dtw_distmat.shape, self.dtw_distmat.dtype, buffer=shm_result.buf)
+            #use pool to run function in parallel
+            func = partial(workers.dtw_shm, data_copy.shape, data_copy.dtype, 
+                          result.shape, result.dtype)
+
+            #build starmap iterable
+            cpu_count = os.cpu_count()
+            n = self.dtw_distmat.shape[0]
+            each = n*n/float(os.cpu_count())
+            arr = [(0, int(math.sqrt(each)))]
+            for i in range(2, os.cpu_count()):
+                arr.append((arr[-1][1], int(math.sqrt(each*i))))
+            arr.append((arr[-1][1], n))
+            #run function in parallel
+            #for args in arr:
+            #    p = Process(target=func, args=args)
+            #    process_list.append(p)
+            #    print("starting process from ", args[0], " to ", args[1])
+            #    p.start()
+            #for p in process_list:
+            #    print("joining process")
+            #    p.join()
+            pool.starmap(func, arr)
+            print("done processing dtw")
+            if process_pool == None:
+                pool.close()
+                pool.join()
+            #copy results out of shared memory
+            np.copyto(self.dtw_distmat, result, casting='no')
+            del data_copy
+            del result
+
+            #close and cleanup shared memory
+            shm_data.close()
+            shm_data.unlink()
+            shm_result.close()
+            shm_result.unlink()
+            elapsed_time = time.time() - start_time
+            print('done in ', str(np.round(elapsed_time, 2)), 'seconds!')
+            return self.dtw_distmat
