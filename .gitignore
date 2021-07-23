@@ -7,3 +7,4 @@ dist/
 build/
 *egg-info
 code/astro/dtw_distmat.pickle
+code/astro/alldms.json
